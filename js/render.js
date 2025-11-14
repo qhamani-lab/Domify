@@ -71,7 +71,6 @@ export function renderSidebar() {
         </div>
         <nav class="p-4 flex flex-col flex-1 overflow-y-auto">
             <div class="relative flex-1">
-                <div id="sidebar-highlighter"></div>
                 ${navLinks}
             </div>
             <div class="relative">
@@ -93,7 +92,6 @@ export function renderCurrentPage(isInitialLoad = false) {
     }
 
     // 2. After a short delay, render the new page
-    // On initial load, we don't want a delay.
     const renderDelay = isInitialLoad ? 0 : 150;
 
     setTimeout(() => {
@@ -155,7 +153,6 @@ function renderHome() {
         </div>
     `;
 
-    // Note: Home page does not get max-width, it's a full-width dashboard.
     pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
         <h1 class="text-3xl font-bold text-dark mb-6">Home</h1>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -171,7 +168,7 @@ function renderHome() {
                     <div class="relative w-24 h-24 mx-auto">
                         <svg class="w-full h-full" viewBox="0 0 36 36" transform="rotate(-90)">
                             <path class="text-gray-200" stroke-width="3" fill="none" stroke="currentColor" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
-                            <path class="text-primary" stroke-width="3" fill="none" stroke="currentColor" stroke-dasharray="${solar.batteryPercent}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                            <path class="text-primary" stroke-width="3" fill="none" stroke="currentColor" stroke-dasharray="${solar.batteryPercent}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831"></path>
                         </svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center">
                             <span class="text-3xl font-bold text-gray-900">${solar.batteryPercent}%</span>

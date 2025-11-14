@@ -2,65 +2,85 @@
 <html lang="en" class="light">
 
 <head>
-       
     <meta charset="UTF-8">
-       
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Domify</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Domify</title>
 
-       
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-           
+
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
-           
+    <!-- Custom Styles -->
     <link rel="stylesheet" href="style.css">
-
 </head>
 
 <body class="font-sans bg-primary-light">
 
-        <div id="app" class="flex h-screen text-gray-800 overflow-x-hidden">
-                        <aside id="sidebar"            
-            class="fixed top-0 left-0 z-40 w-72 h-full bg-white shadow-lg transform -translate-x-full md:relative md:translate-x-0">
-                                </aside>
+    <div id="app" class="flex h-screen text-gray-800">
 
-                        <div id="sidebar-overlay"
-            class="fixed inset-0 bg-black/50 z-30 md:hidden hidden transition-opacity duration-300 ease-in-out opacity-0">
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed top-0 left-0 z-40 h-full bg-white shadow-lg transform -translate-x-full md:relative md:translate-x-0 md:w-72">
+            <div id="sidebar-highlighter"></div>
+            <!-- Sidebar content will be injected by JavaScript -->
+        </aside>
+
+        <!-- Sidebar Overlay (Mobile) -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 md:hidden hidden"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-primary-light w-full">
+
+            <!-- Mobile Header with Menu Button -->
+            <div class="p-4 md:hidden sticky top-0 bg-primary-light z-10">
+                <button id="open-sidebar-btn"
+                    class="text-dark p-2 -ml-2 hover:bg-white/50 rounded-lg transition-colors">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Page Content Container -->
+            <div id="page-content" class="w-full max-w-full px-4 md:px-6 lg:px-8">
+                <!-- Dynamic content will be injected here by JavaScript -->
+            </div>
+        </main>
+
+        <!-- Modal -->
+        <div id="modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+            <div id="modal-content" class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-y-auto">
+                <!-- Modal content will be injected by JavaScript -->
+            </div>
         </div>
-
-                        <main class="flex-1 overflow-y-auto bg-primary-light">
-                        <div class="p-4 md:hidden">
-                                <button id="open-sidebar-btn" class="text-dark">
-                                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24"                         stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"  
-                                                      d="M4 6h16M4 12h16M4 18h16"></path>
-                                            </svg>
-                                    </button>
-                            </div>
-                        <div id="page-content">
-                                            </div>
-                    </main>
-
-                        <div id="modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-                        <div id="modal-content"
-                class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                                            </div>
-                    </div>
-            </div>
-
-    <div id="scanner-container" class="fixed inset-0 bg-black z-50 p-4 flex flex-col items-center justify-center">
-        <div id="scanner-viewfinder" class="w-full max-w-md aspect-square bg-gray-900 rounded-lg overflow-hidden">
-        </div>
-        <p id="scanner-status" class="text-white text-lg mt-4">Initializing camera...</p>
-        <button id="close-scanner-btn" class="mt-4 bg-white text-dark font-bold py-2 px-6 rounded-lg">Cancel</button>
     </div>
 
-       
+    <!-- Barcode/QR Scanner -->
+    <div id="scanner-container" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
+        <div class="w-full max-w-md px-4 flex flex-col items-center">
+            <div id="scanner-viewfinder" class="w-full aspect-square bg-gray-900 rounded-lg overflow-hidden mb-4">
+                <!-- Camera feed will appear here -->
+            </div>
+            <p id="scanner-status" class="text-white text-lg text-center mb-4">Initializing camera...</p>
+            <button id="close-scanner-btn"
+                class="bg-white text-dark font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Main JavaScript -->
     <script type="module" src="js/main.js"></script>
 
 </body>
