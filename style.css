@@ -3,6 +3,8 @@
     --primary-dark: #6238cc;
     --primary-light: #F5F3FF;
     --text-dark: #201A33;
+    /* iOS standard ease */
+    --ios-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .bg-primary {
@@ -41,7 +43,7 @@
     color: var(--text-dark);
 }
 
-/* Custom scrollbar for better aesthetics */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -59,54 +61,214 @@
     background: #aaa;
 }
 
-/* Donut chart for Solar Insights */
+/* Donut chart */
 .donut-chart {
     position: relative;
     width: 200px;
-    height: 200px;
-    /* make container full size so 200x200 circle isn't clipped */
-    /* overflow: hidden; optional: keep if you intentionally want clipping */
+    height: 100px;
+    overflow: hidden;
 }
 
 .donut-chart-bg {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 0;
+    left: 0;
     width: 200px;
     height: 200px;
     border-radius: 50%;
-    transform: translate(-50%, -50%) rotate(-90deg);
-    /* gradient stops use CSS variables; ensure --solar-percent and --grid-start are set as percentages */
     background: conic-gradient(from 270deg,
             var(--primary) 0%,
             var(--primary) var(--solar-percent, 0%),
-            #F0C4FF var(--solar-percent, 0%),
+            #F0C4FF 0%,
             #F0C4FF var(--grid-start, 0%),
-            var(--text-dark) var(--grid-start, 0%),
+            var(--text-dark) 0%,
             var(--text-dark) 100%);
+    transform: rotate(-90deg);
 }
 
 .donut-chart-hole {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 25px;
+    left: 25px;
     width: 150px;
     height: 150px;
-    transform: translate(-50%, -50%);
     background: white;
     border-radius: 50%;
 }
 
 .donut-chart-center {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 20px;
+    left: 0;
     width: 100%;
-    max-width: 150px;
-    height: auto;
+    height: 100px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+}
+
+/* Fix for iOS modal scrolling */
+#modal-content {
+    -webkit-overflow-scrolling: touch;
+}
+
+
+/* =========================================
+=== TRANSITION STYLES 
+=========================================
+*/
+
+/* 1. Modal Pop-in */
+#modal {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s var(--ios-ease);
+}
+
+#modal.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#modal-content {
+    opacity: 0;
+    transform: scale(0.90);
+    transition: all 0.3s var(--ios-ease);
+}
+
+#modal.is-visible #modal-content {
+    opacity: 1;
+    transform: scale(1);
+}
+
+
+/* 2. Pantry Collapse */
+.collapsible-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 0.35s var(--ios-ease), opacity 0.25s ease-in-out;
+}
+
+.collapsible-content-inner {
+    overflow: hidden;
+}
+
+.collapsible-content.expanded {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+/* 3. Sidebar Links and List Hovers */
+.nav-link,
+.pantry-item-row,
+.todo-item-row,
+.grocery-item-row,
+.routine-type-btn,
+.routine-mode-btn,
+.toggle-collapse-btn {
+    transition: background-color 0.25s ease-out;
+}
+
+.dashboard-tile {
+    transition: transform 0.25s var(--ios-ease), box-shadow 0.25s var(--ios-ease);
+}
+
+/* 4. Sidebar Slide (Mobile) */
+#sidebar {
+    transition: transform 0.4s var(--ios-ease);
+}
+
+/* 5. Sidebar Overlay (Mobile) */
+#sidebar-overlay {
+    transition: opacity 0.4s var(--ios-ease);
+    opacity: 0;
+    /* Start hidden */
+}
+
+#sidebar-overlay:not(.hidden) {
+    opacity: 1;
+    /* Fade in */
+}
+
+/* 6. Task Strikethrough */
+.task-text {
+    position: relative;
+    transition: color 0.4s ease;
+}
+
+.task-text::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    height: 2px;
+    width: 100%;
+    background: var(--text-dark);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s var(--ios-ease);
+}
+
+.is-checked .task-text {
+    color: #9ca3af;
+}
+
+.is-checked .task-text::after {
+    transform: scaleX(1);
+    background: #9ca3af;
+}
+
+.task-checkbox {
+    transition: all 0.2s ease;
+    transition-delay: 0.1s;
+}
+
+.is-checked .task-checkbox {
+    transform: scale(1.1);
+}
+
+/* 7. Sidebar Highlighter */
+#sidebar-highlighter {
+    position: absolute;
+    left: 1rem;
+    /* p-4 */
+    right: 1rem;
+    /* p-4 */
+    height: 44px;
+    background-color: var(--primary-light);
+    border-radius: 0.5rem;
+    /* rounded-lg */
+    z-index: 0;
+    /* Behind the text */
+
+    /* The magic! Animate transform and height */
+    transition: transform 0.35s var(--ios-ease), height 0.35s var(--ios-ease);
+}
+
+/* 8. NEW: Page Transitions */
+.page-wrapper {
+    /* Start hidden */
+    opacity: 0;
+    transform: translateY(10px);
+    /* Animate in */
+    transition: opacity 0.3s var(--ios-ease), transform 0.3s var(--ios-ease);
+}
+
+.page-wrapper.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 9. NEW: Scanner Transition */
+#scanner-container {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s var(--ios-ease);
+}
+
+#scanner-container.is-visible {
+    opacity: 1;
+    pointer-events: auto;
 }

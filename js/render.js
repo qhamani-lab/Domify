@@ -14,10 +14,21 @@ export const modalContentEl = document.getElementById('modal-content');
 // --- CORE RENDER FUNCTIONS ---
 export function renderAll() {
     renderSidebar();
-    renderCurrentPage();
+    renderCurrentPage(); // Call this on initial load
+
+    // We need to run these after the first page is rendered
+    setTimeout(() => {
+        updateSidebarHighlighter();
+        // Make the first page load feel animated
+        const newPageWrapper = pageContent.querySelector('.page-wrapper');
+        if (newPageWrapper) {
+            newPageWrapper.classList.add('is-visible');
+        }
+    }, 50); // Small delay for browser to draw
+
     updateTheme();
     saveState();
-    generateAllBarcodes();
+    generateAllCodes();
 }
 
 function updateTheme() {
@@ -25,7 +36,8 @@ function updateTheme() {
     document.documentElement.classList.remove('dark');
 }
 
-function renderSidebar() {
+// --- UPDATED: Added 'export' ---
+export function renderSidebar() {
     const navItems = [
         { id: 'home', label: 'Home', icon: 'dashboard' },
         { id: 'grocery', label: 'Grocery List', icon: 'shoppingCart' },
@@ -38,43 +50,81 @@ function renderSidebar() {
 
     const navLinks = navItems.map(item => {
         const isActive = state.currentPage === item.id;
-        const activeClass = 'bg-primary-light text-primary font-bold';
+        const activeClass = 'text-primary font-bold';
         const inactiveClass = 'text-dark hover:bg-primary-light/50';
         const iconClass = isActive ? 'text-primary' : 'text-dark';
-        return `<a href="#" data-page="${item.id}" class="nav-link flex items-center px-4 py-3 text-lg rounded-lg transition-colors duration-200 ${isActive ? activeClass : inactiveClass}">
+
+        return `<a href="#" data-page="${item.id}" class="nav-link relative z-10 flex items-center px-4 py-3 text-lg rounded-lg ${isActive ? activeClass : inactiveClass}">
             <span class="mr-4 ${iconClass}">${ICONS[item.icon]}</span>
             <span>${item.label}</span>
         </a>`
     }).join('');
 
     const isSettingsActive = state.currentPage === 'settings';
-    const settingsActiveClass = 'bg-primary-light text-primary font-bold';
+    const settingsActiveClass = 'text-primary font-bold';
     const settingsInactiveClass = 'text-dark hover:bg-primary-light/50';
     const settingsIconClass = isSettingsActive ? 'text-primary' : 'text-dark';
-    const settingsLink = `<a href="#" data-page="settings" class="nav-link flex items-center px-4 py-3 text-lg rounded-lg transition-colors duration-200 ${isSettingsActive ? settingsActiveClass : settingsInactiveClass}">
+    const settingsLink = `<a href="#" data-page="settings" class="nav-link relative z-10 flex items-center px-4 py-3 text-lg rounded-lg ${isSettingsActive ? settingsActiveClass : settingsInactiveClass}">
         <span class="mr-4 ${settingsIconClass}">${ICONS.settings}</span>
         <span>Settings</span>
     </a>`;
 
-    sidebarEl.innerHTML = `<div class="p-5 flex items-center justify-between border-b"><div class="flex items-center space-x-3">${ICONS.home}<span class="text-2xl font-bold text-dark">Domify</span></div><button id="close-sidebar-btn" class="md:hidden text-gray-600">${ICONS.x}</button></div><nav class="p-4 flex flex-col flex-1 overflow-y-auto"><div class="flex-1">${navLinks}</div><div>${settingsLink}</div></nav>`;
+    sidebarEl.innerHTML = `
+        <div class="p-5 flex items-center justify-between border-b">
+            <div class="flex items-center space-x-3">
+                ${ICONS.home}
+                <span class="text-2xl font-bold text-dark">Domify</span>
+            </div>
+            <button id="close-sidebar-btn" class="md:hidden text-gray-600">${ICONS.x}</button>
+        </div>
+        <nav class="p-4 flex flex-col flex-1 overflow-y-auto">
+            <div class="relative flex-1">
+                <div id="sidebar-highlighter"></div>
+                ${navLinks}
+            </div>
+            <div class="relative">
+                ${settingsLink}
+            </div>
+        </nav>
+    `;
 }
 
-export function renderCurrentPage() {
+export function renderCurrentPage(isInitialLoad = false) {
     if (state.currentPage !== 'pantry') {
         state.editingPantryItemId = null;
     }
 
-    switch (state.currentPage) {
-        case 'home': renderHome(); break;
-        case 'grocery': renderGroceryList(); break;
-        case 'pantry': renderPantry(); break;
-        case 'todo': renderTodoList(); break;
-        case 'rewards': renderRewards(); break;
-        case 'buy': renderBuy(); break;
-        case 'meals': renderMealPlanner(); break;
-        case 'settings': renderSettings(); break;
-        default: renderHome();
+    // 1. Find the old page (if it exists) and make it fade out
+    const oldPageWrapper = pageContent.querySelector('.page-wrapper');
+    if (oldPageWrapper) {
+        oldPageWrapper.classList.remove('is-visible');
     }
+
+    // 2. After a short delay, render the new page
+    // On initial load, we don't want a delay.
+    const renderDelay = isInitialLoad ? 0 : 150;
+
+    setTimeout(() => {
+        switch (state.currentPage) {
+            case 'home': renderHome(); break;
+            case 'grocery': renderGroceryList(); break;
+            case 'pantry': renderPantry(); break;
+            case 'todo': renderTodoList(); break;
+            case 'rewards': renderRewards(); break;
+            case 'buy': renderBuy(); break;
+            case 'meals': renderMealPlanner(); break;
+            case 'settings': renderSettings(); break;
+            default: renderHome();
+        }
+
+        // 3. Find the NEW page wrapper and make it fade in
+        setTimeout(() => {
+            const newPageWrapper = pageContent.querySelector('.page-wrapper');
+            if (newPageWrapper) {
+                newPageWrapper.classList.add('is-visible');
+            }
+        }, 10);
+    }, renderDelay);
 }
 
 
@@ -113,7 +163,7 @@ function renderHome() {
         </div>
     `;
 
-    pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8">
+    pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
         <h1 class="text-3xl font-bold text-dark mb-6">Home</h1>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <div class="dashboard-tile sm:col-span-1 bg-white p-4 rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer" data-modal="solar">
@@ -166,12 +216,13 @@ function renderHome() {
                     <p class="text-sm text-gray-500 mt-2">Tap to show card</p>
                 </div>
             </div>` : ''}
-            </div>
-    </div>`;
+        </div>
+    </div></div>`;
 }
 
 function renderGroceryList() {
-    pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8">
+    pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
+      <div class="max-w-5xl mx-auto">
         <h1 class="text-3xl font-bold text-dark mb-6">Grocery List</h1>
         <div class="bg-white p-4 rounded-lg shadow-sm">
             <form id="add-grocery-form" class="flex gap-2 mb-4">
@@ -180,16 +231,17 @@ function renderGroceryList() {
             </form>
             <div id="grocery-list" class="space-y-2 max-h-96 overflow-y-auto">
                 ${state.groceryList.map(item => `
-                    <div class="flex items-center p-2 rounded hover:bg-gray-50">
-                        <input type="checkbox" data-id="${item.id}" class="toggle-grocery-item h-6 w-6 rounded border-gray-300 text-primary focus:ring-primary" ${item.checked ? 'checked' : ''}/>
-                        <span class="flex-grow mx-3 ${item.checked ? 'line-through text-gray-500' : 'text-dark'}">${item.name}</span>
+                    <div class="grocery-item-row flex items-center p-2 rounded hover:bg-gray-50 ${item.checked ? 'is-checked' : ''}" data-item-id="${item.id}">
+                        <input type="checkbox" data-id="${item.id}" class="task-checkbox toggle-grocery-item h-6 w-6 rounded border-gray-300 text-primary focus:ring-primary" ${item.checked ? 'checked' : ''}/>
+                        <span class="task-text flex-grow mx-3">${item.name}</span>
                         <button data-id="${item.id}" class="delete-grocery-item text-gray-400 hover:text-red-500">${ICONS.trash}</button>
                     </div>
                 `).join('')}
                 ${state.groceryList.length === 0 ? `<p class="text-gray-500 text-center">Your grocery list is empty.</p>` : ''}
             </div>
         </div>
-    </div>`;
+      </div>
+    </div></div>`;
 }
 
 function renderPantry() {
@@ -212,6 +264,7 @@ function renderPantry() {
                 </button>
             </form>
         </div>
+
         <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
             <h2 class="text-xl font-bold text-dark mb-3">Add New Category</h2>
             <form id="add-tag-form" class="flex gap-2">
@@ -221,7 +274,18 @@ function renderPantry() {
                 </button>
             </form>
         </div>
+
+        <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
+            <h2 class="text-xl font-bold text-dark mb-3">Scan Receipt</h2>
+            <p class="text-sm text-gray-500 mb-3">Upload a photo of your receipt to add items quickly.</p>
+            <button id="upload-receipt-btn" class="w-full bg-white text-primary font-semibold py-2 px-4 rounded-lg shadow-sm border border-primary hover:bg-primary-light flex items-center justify-center space-x-2">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.174C2.999 7.58 2.25 8.507 2.25 9.574v9.572c0 1.067.75 1.994 1.802 2.169a47.865 47.865 0 0 0 1.134.173 2.31 2.31 0 0 1 2.148 1.043 2.31 2.31 0 0 1 0 2.225M17.814 6.175c1.15-.324 2.31-.054 2.31 1.055v9.572c0 1.067-.75 1.994-1.802 2.169a47.865 47.865 0 0 1-1.134.173 2.31 2.31 0 0 0-2.148 1.043 2.31 2.31 0 0 0 0 2.225M6.175 12a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-1.5 0v-3a.75.75 0 0 1 .75-.75Zm4.5 0a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-1.5 0v-3a.75.75 0 0 1 .75-.75Zm4.5 0a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-1.5 0v-3a.75.75 0 0 1 .75-.75Z" /></svg>
+                <span>Upload Receipt</span>
+            </button>
+            <input type="file" id="receipt-file-input" class="hidden" accept="image/*">
+        </div>
     `;
+
     let listHTML = '';
     if (state.pantryShowAll) {
         const allItems = state.pantry.map(item => renderPantryItem(item)).join('');
@@ -235,28 +299,32 @@ function renderPantry() {
         listHTML = state.pantryTags.map(tag => {
             const itemsForTag = state.pantry.filter(item => item.tag === tag);
             const isCollapsed = state.collapsedTags.includes(tag);
-            if (itemsForTag.length === 0) {
-                return '';
-            }
+
             return `
             <div class="bg-white rounded-lg shadow-sm mb-4 overflow-hidden">
                 <div data-tag="${tag}" class="toggle-collapse-btn flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50">
                     <h2 class="text-xl font-bold text-dark">${tag} (${itemsForTag.length})</h2>
-                    <span class="text-primary transition-transform ${isCollapsed ? 'rotate-0' : 'rotate-180'}">
+                    <span class="text-primary transition-transform ${isCollapsed ? '' : 'rotate-180'}">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                     </span>
                 </div>
-                <div class="p-4 border-t ${isCollapsed ? 'hidden' : ''}">
-                    <div class="space-y-2">
-                        ${itemsForTag.map(item => renderPantryItem(item)).join('')}
+
+                <div class="collapsible-content ${isCollapsed ? '' : 'expanded'}">
+                    <div class="collapsible-content-inner">
+                        <div class="p-4 border-t">
+                            <div class="space-y-2">
+                                ${itemsForTag.length > 0 ? itemsForTag.map(item => renderPantryItem(item)).join('') : '<p class="text-xs text-gray-400 text-center">No items in this category.</p>'}
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>
             `;
         }).join('');
     }
 
-    pageContent.innerHTML = `
+    pageContent.innerHTML = `<div class="page-wrapper">
         <div class="p-4 sm:p-6 lg:p-8">
             <div class="flex justify-between items-center mb-6 max-w-5xl mx-auto">
                 <h1 class="text-3xl font-bold text-dark">Pantry</h1>
@@ -269,11 +337,11 @@ function renderPantry() {
                     ${formsHTML}
                 </div>
                 <div class="md:col-span-1">
-                    ${listHTML || `<p class="text-gray-500 text-center md:mt-10">Your pantry is empty. Add an item to get started.</p>`}
+                    ${listHTML}
                 </div>
             </div>
         </div>
-    `;
+    </div>`;
 }
 
 function renderPantryItem(item) {
@@ -284,7 +352,7 @@ function renderPantryItem(item) {
             </option>
         `).join('');
         return `
-        <div class="flex items-center p-2 rounded bg-primary-light/50">
+        <div class="pantry-item-row flex items-center p-2 rounded bg-primary-light/50">
             <span class="flex-grow text-dark font-semibold">${item.name}</span>
             <select class="edit-pantry-tag-select mx-2 p-1 border rounded bg-white">
                 ${editTagOptions}
@@ -299,7 +367,7 @@ function renderPantryItem(item) {
         `;
     } else {
         return `
-        <div class="flex items-center p-2 rounded hover:bg-gray-50">
+        <div class="pantry-item-row flex items-center p-2 rounded hover:bg-gray-50">
             <span class="flex-grow text-dark">${item.name}</span>
             <button data-id="${item.id}" title="Change Category" class="edit-pantry-item mr-2 text-gray-400 hover:text-primary p-1 rounded-full hover:bg-primary-light/50">
                 ${ICONS.edit}
@@ -316,7 +384,8 @@ function renderPantryItem(item) {
 }
 
 function renderTodoList() {
-    pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8">
+    pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
+      <div class="max-w-5xl mx-auto">
         <h1 class="text-3xl font-bold text-dark mb-6">To-Do List</h1>
         <div class="bg-white p-4 rounded-lg shadow-sm">
             <form id="add-todo-form" class="flex gap-2 mb-4">
@@ -325,30 +394,80 @@ function renderTodoList() {
             </form>
             <div id="todo-list" class="space-y-2 max-h-96 overflow-y-auto">
                 ${state.todos.map(item => `
-                    <div class="flex items-center p-2 rounded hover:bg-gray-50">
-                        <input type="checkbox" data-id="${item.id}" class="toggle-todo-item h-6 w-6 rounded border-gray-300 text-primary focus:ring-primary" ${item.checked ? 'checked' : ''}/>
-                        <span class="flex-grow mx-3 ${item.checked ? 'line-through text-gray-500' : 'text-dark'}">${item.text}</span>
+                    <div class="todo-item-row flex items-center p-2 rounded hover:bg-gray-50 ${item.checked ? 'is-checked' : ''}" data-item-id="${item.id}">
+                        <input type="checkbox" data-id="${item.id}" class="task-checkbox toggle-todo-item h-6 w-6 rounded border-gray-300 text-primary focus:ring-primary" ${item.checked ? 'checked' : ''}/>
+                        <span class="task-text flex-grow mx-3">${item.text}</span>
                         <button data-id="${item.id}" class="delete-todo-item text-gray-400 hover:text-red-500">${ICONS.trash}</button>
                     </div>
                 `).join('')}
                 ${state.todos.length === 0 ? `<p class="text-gray-500 text-center">Your to-do list is empty.</p>` : ''}
             </div>
         </div>
-    </div>`;
+      </div>
+    </div></div>`;
 }
 
 function renderRewards() {
-    pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8"><h1 class="text-3xl font-bold text-dark mb-6">Rewards Cards</h1><div class="bg-white p-4 rounded-lg shadow-sm mb-8"><h2 class="text-xl font-bold text-dark mb-3">Add a New Card</h2><form id="add-card-form" class="space-y-4"><input type="text" id="new-card-name" placeholder="Card Name (e.g., Clicks)" class="w-full p-2 border rounded bg-gray-50 focus:ring-primary focus:border-primary"/><input type="text" id="new-card-barcode" placeholder="Barcode Number" class="w-full p-2 border rounded bg-gray-50 focus:ring-primary focus:border-primary"/><button type="submit" class="w-full bg-primary text-white font-bold py-2 px-4 rounded hover:bg-primary-dark">Add Card</button></form></div><div id="rewards-list" class="space-y-4">${state.rewardsCards.map(c => `<div class="bg-white p-4 rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-center justify-between"><div data-modal="barcode" data-card-id="${c.id}" class="cursor-pointer mb-4 sm:mb-0"><h3 class="text-lg font-bold text-dark">${c.name}</h3><div class="mt-2"><svg id="barcode-${c.id}"></svg></div></div><div class="flex items-center space-x-2"><button data-id="${c.id}" class="set-favorite-btn text-sm font-semibold py-1 px-3 rounded-full ${c.isFavorite ? 'bg-yellow-400 text-yellow-900' : 'bg-gray-200 hover:bg-gray-300'}">${c.isFavorite ? '★ Favorite' : 'Set Favorite'}</button><button data-id="${c.id}" class="delete-card-btn text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-100">${ICONS.trash}</button></div></div>`).join('') || `<p class="text-center text-gray-500">No cards added yet.</p>`}</div></div>`;
+    pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
+      <div class="max-w-5xl mx-auto">
+        <h1 class="text-3xl font-bold text-dark mb-6">Rewards Cards</h1>
+        
+        <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
+            <button id="scan-card-btn" class="w-full bg-white text-primary font-semibold py-3 px-4 rounded-lg shadow-sm border border-primary hover:bg-primary-light flex items-center justify-center space-x-2">
+                ${ICONS.qr_code}
+                <span>Scan New Card</span>
+            </button>
+        </div>
+        
+        <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
+            <h2 class="text-xl font-bold text-dark mb-3">...Or Add Manually</h2>
+            <form id="add-card-form" class="space-y-4">
+                <input type="text" id="new-card-name" placeholder="Card Name (e.g., Clicks)" class="w-full p-2 border rounded bg-gray-50 focus:ring-primary focus:border-primary"/>
+                <input type="text" id="new-card-barcode" placeholder="Barcode Number" class="w-full p-2 border rounded bg-gray-50 focus:ring-primary focus:border-primary"/>
+                <button type="submit" class="w-full bg-primary text-white font-bold py-2 px-4 rounded hover:bg-primary-dark">Add Card</button>
+            </form>
+        </div>
+        
+        <div id="rewards-list" class="space-y-4">
+            ${state.rewardsCards.map(c => {
+        let renderElement = '';
+        if (c.type === 'qrcode') {
+            renderElement = `<div id="card-qr-${c.id}" class="mt-2 flex justify-center"></div>`;
+        } else {
+            renderElement = `<svg id="card-barcode-${c.id}" class="mt-2"></svg>`;
+        }
+        return `
+                <div class="bg-white p-4 rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-center justify-between">
+                    <div data-modal="barcode" data-card-id="${c.id}" class="cursor-pointer mb-4 sm:mb-0 w-full sm:w-auto">
+                        <h3 class="text-lg font-bold text-dark">${c.name}</h3>
+                        ${renderElement}
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button data-id="${c.id}" class="set-favorite-btn text-sm font-semibold py-1 px-3 rounded-full ${c.isFavorite ? 'bg-yellow-400 text-yellow-900' : 'bg-gray-200 hover:bg-gray-300'}">${c.isFavorite ? '★ Favorite' : 'Set Favorite'}</button>
+                        <button data-id="${c.id}" class="delete-card-btn text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-100">${ICONS.trash}</button>
+                    </div>
+                </div>
+                `
+    }).join('') || `<p class="text-center text-gray-500">No cards added yet.</p>`}
+        </div>
+      </div>
+    </div></div>`;
 }
 
 function renderBuy() {
-    pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8"><h1 class="text-3xl font-bold text-dark mb-6">Marketplace</h1><div class="grid grid-cols-1 md:grid-cols-2 gap-6">${state.marketplaceCategories.map(cat => `<div class="bg-white p-6 rounded-2xl shadow-sm flex flex-col"><div class="flex items-center mb-2">${ICONS[cat.icon]}<h2 class="text-2xl font-bold text-dark ml-3">${cat.title}</h2></div><p class="text-gray-600 flex-grow mb-4">${cat.description}</p><ul class="text-sm space-y-2 mb-4">${cat.offers.slice(0, 2).map(o => `<li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span class="text-gray-700"><b>${o.name}:</b> ${o.deal}</span></li>`).join('')}</ul><button data-category-id="${cat.id}" class="view-offers-btn mt-auto w-full bg-primary-light/60 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary-light">View All Offers</button></div>`).join('')}</div></div>`;
+    pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
+      <div class="max-w-5xl mx-auto">
+        <h1 class="text-3xl font-bold text-dark mb-6">Marketplace</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">${state.marketplaceCategories.map(cat => `<div class="bg-white p-6 rounded-2xl shadow-sm flex flex-col"><div class="flex items-center mb-2">${ICONS[cat.icon]}<h2 class="text-2xl font-bold text-dark ml-3">${cat.title}</h2></div><p class="text-gray-600 flex-grow mb-4">${cat.description}</p><ul class="text-sm space-y-2 mb-4">${cat.offers.slice(0, 2).map(o => `<li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span class="text-gray-700"><b>${o.name}:</b> ${o.deal}</span></li>`).join('')}</ul><button data-category-id="${cat.id}" class="view-offers-btn mt-auto w-full bg-primary-light/60 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary-light">View All Offers</button></div>`).join('')}</div>
+      </div>
+    </div></div>`;
 }
 
 function renderMealPlanner() {
     const day = state.mealPlan.selectedDay;
     const dayMeals = state.mealPlan[day] || { B: '', L: '', D: '', S: '' };
-    pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8">
+    pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
+      <div class="max-w-5xl mx-auto">
         <h1 class="text-3xl font-bold text-dark mb-4">Meal Planner</h1>
         
         <div class="flex items-center justify-between mb-6 bg-white p-2 rounded-lg shadow-sm">
@@ -372,44 +491,64 @@ function renderMealPlanner() {
 
             </div>
         </div>
-    </div>`;
+      </div>
+    </div></div>`;
 }
 
 function renderSettings() {
-    pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8"><h1 class="text-3xl font-bold text-dark mb-6">Settings</h1><div class="bg-white p-6 rounded-lg shadow-sm space-y-6">
-        <div class="flex justify-between items-center border-t pt-6">
-            <div><h3 class="text-lg font-bold text-dark">Loadshedding Watch</h3><p class="text-sm text-gray-500">${state.settings.loadshedding.area ? `Monitoring: ${state.settings.loadshedding.area}` : 'No area set.'}</p></div>
-            <button id="loadshedding-btn" class="bg-primary text-white font-bold py-2 px-4 rounded hover:bg-primary-dark">${state.settings.loadshedding.area ? 'Change Area' : 'Set Area'}</button>
+    pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
+      <div class="max-w-5xl mx-auto">
+        <h1 class="text-3xl font-bold text-dark mb-6">Settings</h1>
+        <div class="bg-white p-6 rounded-lg shadow-sm space-y-6">
+            <div class="flex justify-between items-center border-t pt-6">
+                <div><h3 class="text-lg font-bold text-dark">Loadshedding Watch</h3><p class="text-sm text-gray-500">${state.settings.loadshedding.area ? `Monitoring: ${state.settings.loadshedding.area}` : 'No area set.'}</p></div>
+                <button id="loadshedding-btn" class="bg-primary text-white font-bold py-2 px-4 rounded hover:bg-primary-dark">${state.settings.loadshedding.area ? 'Change Area' : 'Set Area'}</button>
+            </div>
         </div>
+      </div>
     </div></div>`;
 }
 
 // --- MODAL & UTILITY RENDER FUNCTIONS ---
-function generateAllBarcodes() {
+function generateAllCodes() {
     setTimeout(() => {
-        if (typeof JsBarcode !== 'function') {
-            console.warn("JsBarcode library not loaded yet.");
-            return;
+        // 1. Render Barcodes
+        if (typeof JsBarcode === 'function') {
+            state.rewardsCards.filter(c => c.type !== 'qrcode').forEach(card => {
+                let el = document.getElementById(`card-barcode-${card.id}`);
+                if (el) {
+                    try {
+                        JsBarcode(el, card.barcode, {
+                            format: "CODE128", displayValue: false, height: 40, margin: 0, width: 2
+                        });
+                    } catch (e) {
+                        console.warn("Could not generate barcode for card " + card.id, e.message);
+                    }
+                }
+            });
         }
 
-        // This logic is now simpler. We ONLY generate barcodes when the modal is opened.
-        // This function still needs to render the barcodes on the REWARDS page.
-        state.rewardsCards.forEach(card => {
-            let el = document.getElementById(`barcode-${card.id}`);
-            if (el) {
-                try {
-                    JsBarcode(el, card.barcode, {
-                        format: "CODE128", displayValue: false, height: 40, margin: 0, width: 2
-                    });
-                } catch (e) {
-                    console.warn("Could not generate barcode for card " + card.id, e.message);
+        // 2. Render QR Codes
+        if (typeof QRCode === 'function') {
+            state.rewardsCards.filter(c => c.type === 'qrcode').forEach(card => {
+                let el = document.getElementById(`card-qr-${card.id}`);
+                if (el) {
+                    try {
+                        el.innerHTML = '';
+                        new QRCode(el, {
+                            text: card.barcode,
+                            width: 128,
+                            height: 128,
+                            colorDark: "#201A33",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    } catch (e) {
+                        console.warn("Could not generate QR code for card " + card.id, e.message);
+                    }
                 }
-            }
-        });
-
-        // The dashboard tile barcode is GONE, so we don't need to render it.
-        // const favoriteCard = state.rewardsCards.find(c => c.isFavorite);
-        // ... (removed) ...
+            });
+        }
     }, 0);
 }
 
@@ -436,6 +575,7 @@ export function renderHotBotModal(view = { name: 'main', tab: 'Routine' }) {
 
     if (view.name === 'add-routine' || view.name === 'edit-routine') {
         renderWizardStep(view.step);
+        modalEl.classList.add('is-visible'); // <-- UPDATED
         return;
     }
 
@@ -468,7 +608,7 @@ export function renderHotBotModal(view = { name: 'main', tab: 'Routine' }) {
             tabContentEl.innerHTML = `<div class="p-6 space-y-6"><div class="flex justify-between items-center"><div><h3 class="text-lg font-bold text-dark">Wi-Fi Connection</h3><p class="text-sm text-gray-500">Connected</p></div><button class="text-primary font-semibold text-sm">Change</button></div><div class="flex justify-between items-center border-t pt-6"><div><h3 class="text-lg font-bold text-dark">Solar Mode</h3><p class="text-sm text-gray-500">Prioritizes using solar power.</p></div><div id="solar-toggle" class="w-14 h-8 flex items-center rounded-full p-1 cursor-pointer ${state.geyser.settings.solar ? 'bg-primary justify-end' : 'bg-gray-300 justify-start'}"><div class="w-6 h-6 bg-white rounded-full shadow-md"></div></div></div></div>`;
             break;
     }
-    modalEl.classList.remove('hidden');
+    modalEl.classList.add('is-visible');
 }
 
 export function renderSolarModal(view = { tab: 'Insights', timeframe: '1d' }) {
@@ -648,10 +788,9 @@ export function renderSolarModal(view = { tab: 'Insights', timeframe: '1d' }) {
             `;
             break;
     }
-    modalEl.classList.remove('hidden');
+    modalEl.classList.add('is-visible');
 }
 
-// --- NEW FUNCTION: LOADSHEDDING MODAL ---
 export function renderLoadsheddingModal() {
     const currentArea = state.settings.loadshedding.area || '';
     modalContentEl.innerHTML = `
@@ -665,5 +804,81 @@ export function renderLoadsheddingModal() {
             <button id="save-loadshedding-btn" class="w-full bg-primary text-white font-bold py-2 px-4 rounded hover:bg-primary-dark">Save Area</button>
         </div>
     `;
-    modalEl.classList.remove('hidden');
+    modalEl.classList.add('is-visible');
+}
+
+export function renderLoadingModal(text = "Loading...") {
+    modalContentEl.innerHTML = `
+        <div class="p-6 text-center">
+            <div class="flex justify-center items-center">
+                <div class="w-12 h-12 border-4 border-t-primary border-gray-200 rounded-full animate-spin"></div>
+            </div>
+            <p id="loading-modal-text" class="text-lg font-semibold text-dark mt-4">${text}</p>
+        </div>
+    `;
+    modalEl.classList.add('is-visible');
+}
+
+export function renderReceiptModal(items) {
+    const itemsHTML = items.map((item, index) => `
+        <label for="item-${index}" class="flex items-center p-2 rounded hover:bg-gray-50 space-x-3">
+            <input type="checkbox" id="item-${index}" class="receipt-item-checkbox h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" value="${item}" checked>
+            <span class="text-dark">${item}</span>
+        </label>
+    `).join('');
+
+    modalContentEl.innerHTML = `
+        <div class="p-4 border-b flex justify-between items-center">
+            <h2 class="text-xl font-bold">Confirm Items</h2>
+            <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800">${ICONS.x}</button>
+        </div>
+        <div class="p-6">
+            <p class="text-sm text-gray-600 mb-4">We found these items on your receipt. Uncheck any you don't want to add.</p>
+            <div id="receipt-item-list" class="space-y-2 max-h-64 overflow-y-auto border p-3 rounded-md">
+                ${itemsHTML || `<p class="text-gray-500 text-center">Couldn't find any items.</p>`}
+            </div>
+            <button id="add-receipt-items-btn" class="w-full bg-primary text-white font-bold py-2 px-4 rounded hover:bg-primary-dark mt-4">
+                Add Selected to Pantry
+            </button>
+        </div>
+    `;
+    modalEl.classList.add('is-visible');
+}
+
+export function renderNameCardModal(scannedData, formatName) {
+    modalContentEl.innerHTML = `
+        <div class="p-4 border-b flex justify-between items-center">
+            <h2 class="text-xl font-bold">Card Scanned!</h2>
+            <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800">${ICONS.x}</button>
+        </div>
+        <div class="p-6 space-y-4">
+            <p class="text-sm text-gray-600">Enter a name for this card:</p>
+            <input type="text" id="scanned-card-name-input" class="w-full mt-1 p-2 border rounded bg-gray-50 focus:ring-primary focus:border-primary" placeholder="e.g., 'My Gym Card'" required>
+            
+            <input type="hidden" id="scanned-card-data" value="${scannedData}">
+            <input type="hidden" id="scanned-card-format" value="${formatName || ''}">
+            
+            <p class="text-xs text-gray-500 pt-2">Scanned Data: <code class="text-xs bg-gray-100 p-1 rounded break-all">${scannedData}</code></p>
+            
+            <button id="save-scanned-card-btn" class="w-full bg-primary text-white font-bold py-2 px-4 rounded hover:bg-primary-dark">Save Card</button>
+        </div>
+    `;
+    modalEl.classList.add('is-visible');
+}
+
+// --- NEW HELPER FUNCTION ---
+export function updateSidebarHighlighter() {
+    const highlighter = document.getElementById('sidebar-highlighter');
+    // Find the currently active link
+    const activeLink = document.querySelector('.nav-link.font-bold');
+
+    if (highlighter && activeLink) {
+        // Get the position and size of the active link
+        const top = activeLink.offsetTop;
+        const height = activeLink.offsetHeight;
+
+        // Set the highlighter's position and size
+        highlighter.style.transform = `translateY(${top}px)`;
+        highlighter.style.height = `${height}px`;
+    }
 }
