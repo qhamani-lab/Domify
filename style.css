@@ -1,0 +1,112 @@
+:root {
+    --primary: #7946FF;
+    --primary-dark: #6238cc;
+    --primary-light: #F5F3FF;
+    --text-dark: #201A33;
+}
+
+.bg-primary {
+    background-color: var(--primary);
+}
+
+.bg-primary-dark {
+    background-color: var(--primary-dark);
+}
+
+.bg-primary-light {
+    background-color: var(--primary-light);
+}
+
+.text-primary {
+    color: var(--primary);
+}
+
+.border-primary {
+    border-color: var(--primary);
+}
+
+.ring-primary {
+    --tw-ring-color: var(--primary);
+}
+
+.focus\:ring-primary:focus {
+    --tw-ring-color: var(--primary);
+}
+
+.focus\:border-primary:focus {
+    --tw-border-color: var(--primary);
+}
+
+.text-dark {
+    color: var(--text-dark);
+}
+
+/* Custom scrollbar for better aesthetics */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+/* Donut chart for Solar Insights */
+.donut-chart {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    /* make container full size so 200x200 circle isn't clipped */
+    /* overflow: hidden; optional: keep if you intentionally want clipping */
+}
+
+.donut-chart-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    /* gradient stops use CSS variables; ensure --solar-percent and --grid-start are set as percentages */
+    background: conic-gradient(from 270deg,
+            var(--primary) 0%,
+            var(--primary) var(--solar-percent, 0%),
+            #F0C4FF var(--solar-percent, 0%),
+            #F0C4FF var(--grid-start, 0%),
+            var(--text-dark) var(--grid-start, 0%),
+            var(--text-dark) 100%);
+}
+
+.donut-chart-hole {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 150px;
+    height: 150px;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 50%;
+}
+
+.donut-chart-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    max-width: 150px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
