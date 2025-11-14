@@ -14,21 +14,14 @@ export const modalContentEl = document.getElementById('modal-content');
 // --- CORE RENDER FUNCTIONS ---
 export function renderAll() {
     renderSidebar();
-    renderCurrentPage(); // Call this on initial load
-
-    // We need to run these after the first page is rendered
-    setTimeout(() => {
-        updateSidebarHighlighter();
-        // Make the first page load feel animated
-        const newPageWrapper = pageContent.querySelector('.page-wrapper');
-        if (newPageWrapper) {
-            newPageWrapper.classList.add('is-visible');
-        }
-    }, 50); // Small delay for browser to draw
-
+    // renderCurrentPage() is now called by the sidebar click event
+    // OR on initial load by main.js
     updateTheme();
     saveState();
     generateAllCodes();
+
+    // Needs a tiny delay for the browser to draw the active link
+    setTimeout(updateSidebarHighlighter, 50);
 }
 
 function updateTheme() {
@@ -36,7 +29,6 @@ function updateTheme() {
     document.documentElement.classList.remove('dark');
 }
 
-// --- UPDATED: Added 'export' ---
 export function renderSidebar() {
     const navItems = [
         { id: 'home', label: 'Home', icon: 'dashboard' },
@@ -163,6 +155,7 @@ function renderHome() {
         </div>
     `;
 
+    // Note: Home page does not get max-width, it's a full-width dashboard.
     pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
         <h1 class="text-3xl font-bold text-dark mb-6">Home</h1>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -222,7 +215,7 @@ function renderHome() {
 
 function renderGroceryList() {
     pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
-      <div class="max-w-5xl mx-auto">
+      <div class="max-w-5xl lg:mx-auto">
         <h1 class="text-3xl font-bold text-dark mb-6">Grocery List</h1>
         <div class="bg-white p-4 rounded-lg shadow-sm">
             <form id="add-grocery-form" class="flex gap-2 mb-4">
@@ -308,7 +301,6 @@ function renderPantry() {
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                     </span>
                 </div>
-
                 <div class="collapsible-content ${isCollapsed ? '' : 'expanded'}">
                     <div class="collapsible-content-inner">
                         <div class="p-4 border-t">
@@ -318,7 +310,6 @@ function renderPantry() {
                         </div>
                     </div>
                 </div>
-
             </div>
             `;
         }).join('');
@@ -326,13 +317,13 @@ function renderPantry() {
 
     pageContent.innerHTML = `<div class="page-wrapper">
         <div class="p-4 sm:p-6 lg:p-8">
-            <div class="flex justify-between items-center mb-6 max-w-5xl mx-auto">
+            <div class="flex justify-between items-center mb-6 max-w-5xl lg:mx-auto">
                 <h1 class="text-3xl font-bold text-dark">Pantry</h1>
                 <button id="toggle-pantry-view" class="bg-white text-primary font-semibold py-2 px-4 rounded-lg shadow-sm hover:bg-primary-light">
                     ${state.pantryShowAll ? 'Show Grouped' : 'Show All'}
                 </button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl lg:mx-auto">
                 <div class="md:col-span-1 space-y-6">
                     ${formsHTML}
                 </div>
@@ -385,7 +376,7 @@ function renderPantryItem(item) {
 
 function renderTodoList() {
     pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
-      <div class="max-w-5xl mx-auto">
+      <div class="max-w-5xl lg:mx-auto">
         <h1 class="text-3xl font-bold text-dark mb-6">To-Do List</h1>
         <div class="bg-white p-4 rounded-lg shadow-sm">
             <form id="add-todo-form" class="flex gap-2 mb-4">
@@ -409,7 +400,7 @@ function renderTodoList() {
 
 function renderRewards() {
     pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
-      <div class="max-w-5xl mx-auto">
+      <div class="max-w-5xl lg:mx-auto">
         <h1 class="text-3xl font-bold text-dark mb-6">Rewards Cards</h1>
         
         <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
@@ -456,7 +447,7 @@ function renderRewards() {
 
 function renderBuy() {
     pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
-      <div class="max-w-5xl mx-auto">
+      <div class="max-w-5xl lg:mx-auto">
         <h1 class="text-3xl font-bold text-dark mb-6">Marketplace</h1>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">${state.marketplaceCategories.map(cat => `<div class="bg-white p-6 rounded-2xl shadow-sm flex flex-col"><div class="flex items-center mb-2">${ICONS[cat.icon]}<h2 class="text-2xl font-bold text-dark ml-3">${cat.title}</h2></div><p class="text-gray-600 flex-grow mb-4">${cat.description}</p><ul class="text-sm space-y-2 mb-4">${cat.offers.slice(0, 2).map(o => `<li class="flex items-start"><span class="text-green-500 mr-2">✓</span><span class="text-gray-700"><b>${o.name}:</b> ${o.deal}</span></li>`).join('')}</ul><button data-category-id="${cat.id}" class="view-offers-btn mt-auto w-full bg-primary-light/60 text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary-light">View All Offers</button></div>`).join('')}</div>
       </div>
@@ -467,7 +458,7 @@ function renderMealPlanner() {
     const day = state.mealPlan.selectedDay;
     const dayMeals = state.mealPlan[day] || { B: '', L: '', D: '', S: '' };
     pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
-      <div class="max-w-5xl mx-auto">
+      <div class="max-w-5xl lg:mx-auto">
         <h1 class="text-3xl font-bold text-dark mb-4">Meal Planner</h1>
         
         <div class="flex items-center justify-between mb-6 bg-white p-2 rounded-lg shadow-sm">
@@ -497,7 +488,7 @@ function renderMealPlanner() {
 
 function renderSettings() {
     pageContent.innerHTML = `<div class="page-wrapper"><div class="p-4 sm:p-6 lg:p-8">
-      <div class="max-w-5xl mx-auto">
+      <div class="max-w-5xl lg:mx-auto">
         <h1 class="text-3xl font-bold text-dark mb-6">Settings</h1>
         <div class="bg-white p-6 rounded-lg shadow-sm space-y-6">
             <div class="flex justify-between items-center border-t pt-6">
@@ -575,7 +566,7 @@ export function renderHotBotModal(view = { name: 'main', tab: 'Routine' }) {
 
     if (view.name === 'add-routine' || view.name === 'edit-routine') {
         renderWizardStep(view.step);
-        modalEl.classList.add('is-visible'); // <-- UPDATED
+        modalEl.classList.add('is-visible');
         return;
     }
 
@@ -866,18 +857,14 @@ export function renderNameCardModal(scannedData, formatName) {
     modalEl.classList.add('is-visible');
 }
 
-// --- NEW HELPER FUNCTION ---
 export function updateSidebarHighlighter() {
     const highlighter = document.getElementById('sidebar-highlighter');
-    // Find the currently active link
     const activeLink = document.querySelector('.nav-link.font-bold');
 
     if (highlighter && activeLink) {
-        // Get the position and size of the active link
         const top = activeLink.offsetTop;
         const height = activeLink.offsetHeight;
 
-        // Set the highlighter's position and size
         highlighter.style.transform = `translateY(${top}px)`;
         highlighter.style.height = `${height}px`;
     }

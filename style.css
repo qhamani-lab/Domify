@@ -183,13 +183,7 @@
 /* 5. Sidebar Overlay (Mobile) */
 #sidebar-overlay {
     transition: opacity 0.4s var(--ios-ease);
-    opacity: 0;
-    /* Start hidden */
-}
-
-#sidebar-overlay:not(.hidden) {
-    opacity: 1;
-    /* Fade in */
+    /* opacity: 0; is set in index.html */
 }
 
 /* 6. Task Strikethrough */
@@ -242,17 +236,13 @@
     /* rounded-lg */
     z-index: 0;
     /* Behind the text */
-
-    /* The magic! Animate transform and height */
     transition: transform 0.35s var(--ios-ease), height 0.35s var(--ios-ease);
 }
 
-/* 8. NEW: Page Transitions */
+/* 8. Page Transitions */
 .page-wrapper {
-    /* Start hidden */
     opacity: 0;
     transform: translateY(10px);
-    /* Animate in */
     transition: opacity 0.3s var(--ios-ease), transform 0.3s var(--ios-ease);
 }
 
@@ -261,7 +251,7 @@
     transform: translateY(0);
 }
 
-/* 9. NEW: Scanner Transition */
+/* 9. Scanner Transition */
 #scanner-container {
     opacity: 0;
     pointer-events: none;

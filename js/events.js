@@ -5,8 +5,8 @@ import { state, saveState, tempRoutine } from './state.js';
 import {
     renderAll,
     renderCurrentPage,
-    renderSidebar, // <-- NEW IMPORT
-    updateSidebarHighlighter, // <-- NEW IMPORT
+    renderSidebar,
+    updateSidebarHighlighter,
     renderHotBotModal,
     renderSolarModal,
     renderLoadsheddingModal,
@@ -26,13 +26,12 @@ export function attachEventListeners() {
     const sidebarEl = document.getElementById('sidebar');
     const pageContent = document.getElementById('page-content');
     const scannerContainer = document.getElementById('scanner-container');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const sidebarOverlay = document.getElementById('sidebar-overlay'); // <-- Get overlay
 
     // --- SIDEBAR LISTENERS (UPDATED) ---
     document.getElementById('open-sidebar-btn').addEventListener('click', () => {
         sidebarEl.classList.remove('-translate-x-full');
         sidebarOverlay.classList.remove('hidden');
-        // Force browser to notice 'hidden' is gone before adding opacity
         setTimeout(() => sidebarOverlay.classList.remove('opacity-0'), 10);
     });
 
@@ -40,7 +39,6 @@ export function attachEventListeners() {
     function closeSidebar() {
         sidebarEl.classList.add('-translate-x-full');
         sidebarOverlay.classList.add('opacity-0');
-        // Wait for animation to finish before hiding
         setTimeout(() => {
             sidebarOverlay.classList.add('hidden');
         }, 400); // Should match CSS duration
@@ -54,18 +52,12 @@ export function attachEventListeners() {
         if (navLink) {
             e.preventDefault();
 
-            // --- UPDATED: Page Transition Logic ---
-            // Don't call renderAll(). Just update state and call renderCurrentPage()
             state.currentPage = navLink.dataset.page;
-            renderCurrentPage(); // This handles the animation
-
-            // We need to manually re-render the sidebar to update the "active" classes
+            renderCurrentPage();
             renderSidebar();
-            // Then manually move the highlighter
             setTimeout(updateSidebarHighlighter, 50);
 
             saveState();
-            // --- END UPDATE ---
 
             if (window.innerWidth < 768) {
                 closeSidebar();
@@ -88,14 +80,12 @@ export function attachEventListeners() {
         // Page/Modal Tiles
         const pageTile = e.target.closest('[data-page]');
         if (pageTile) {
-            // --- UPDATED: Page Transition Logic ---
             state.currentPage = pageTile.dataset.page;
-            renderCurrentPage(); // This handles the animation
-            renderSidebar(); // Need to re-render sidebar to show new active link
-            setTimeout(updateSidebarHighlighter, 50); // Update highlighter
+            renderCurrentPage();
+            renderSidebar();
+            setTimeout(updateSidebarHighlighter, 50);
             saveState();
             return;
-            // --- END UPDATE ---
         }
 
         const modalTile = e.target.closest('[data-modal]');
@@ -178,24 +168,24 @@ export function attachEventListeners() {
             if (e.target.closest('.delete-grocery-item')) {
                 const id = parseInt(e.target.closest('.delete-grocery-item').dataset.id);
                 state.groceryList = state.groceryList.filter(i => i.id !== id);
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage(); // Re-render only on delete
             }
         }
 
-        // PANTRY PAGE (UPDATED FOR ANIMATION)
+        // PANTRY PAGE
         else if (state.currentPage === 'pantry') {
             const editBtn = e.target.closest('.edit-pantry-item');
             if (editBtn) {
                 const id = parseInt(editBtn.dataset.id);
                 state.editingPantryItemId = id;
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
                 return;
             }
 
             const cancelBtn = e.target.closest('.cancel-edit-pantry');
             if (cancelBtn) {
                 state.editingPantryItemId = null;
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
                 return;
             }
 
@@ -210,7 +200,7 @@ export function attachEventListeners() {
                 }
 
                 state.editingPantryItemId = null;
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
                 return;
             }
 
@@ -221,12 +211,12 @@ export function attachEventListeners() {
                     state.groceryList.push({ id: Date.now(), name: item.name, checked: false });
                 }
                 state.pantry = state.pantry.filter(i => i.id !== id);
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
             }
             if (e.target.closest('.delete-pantry-item')) {
                 const id = parseInt(e.target.closest('.delete-pantry-item').dataset.id);
                 state.pantry = state.pantry.filter(i => i.id !== id);
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
             }
 
             const collapseBtn = e.target.closest('.toggle-collapse-btn');
@@ -239,20 +229,19 @@ export function attachEventListeners() {
                 } else {
                     state.collapsedTags.push(tag);
                 }
-                // Toggle class for animation, don't re-render
                 const content = collapseBtn.nextElementSibling;
                 if (content && content.classList.contains('collapsible-content')) {
                     content.classList.toggle('expanded');
                     collapseBtn.querySelector('span').classList.toggle('rotate-180');
                 } else {
-                    renderCurrentPage(); // Fallback
+                    renderCurrentPage();
                 }
-                saveState(); // Save the collapsed state
+                saveState();
             }
 
             if (e.target.id === 'toggle-pantry-view') {
                 state.pantryShowAll = !state.pantryShowAll;
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
             }
 
             // Handle Upload Button Click
@@ -270,12 +259,12 @@ export function attachEventListeners() {
             if (e.target.closest('.delete-card-btn')) {
                 const id = parseInt(e.target.closest('.delete-card-btn').dataset.id);
                 state.rewardsCards = state.rewardsCards.filter(c => c.id !== id);
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
             }
             if (e.target.closest('.set-favorite-btn')) {
                 const id = parseInt(e.target.closest('.set-favorite-btn').dataset.id);
                 state.rewardsCards.forEach(c => c.isFavorite = (c.id === id ? !c.isFavorite : false));
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
             }
         }
 
@@ -298,7 +287,7 @@ export function attachEventListeners() {
             }
         }
 
-        // TO-DO PAGE (UPDATED FOR ANIMATION)
+        // TO-DO PAGE
         else if (state.currentPage === 'todo') {
             const todoCheckbox = e.target.closest('.toggle-todo-item');
             if (todoCheckbox) {
@@ -306,7 +295,6 @@ export function attachEventListeners() {
                 const todo = state.todos.find(t => t.id === id);
                 if (todo) {
                     todo.checked = !todo.checked; // Update state
-                    // Toggle class for animation, don't re-render
                     const itemRow = todoCheckbox.closest('.todo-item-row');
                     itemRow.classList.toggle('is-checked', todo.checked);
                     saveState(); // Just save
@@ -316,7 +304,7 @@ export function attachEventListeners() {
             if (deleteButton) {
                 const id = parseInt(deleteButton.dataset.id);
                 state.todos = state.todos.filter(t => t.id !== id);
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
             }
         }
 
@@ -328,12 +316,12 @@ export function attachEventListeners() {
             if (e.target.closest('#prev-day-btn')) {
                 const newIndex = (currentIndex - 1 + 7) % 7;
                 state.mealPlan.selectedDay = days[newIndex];
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
             }
             if (e.target.closest('#next-day-btn')) {
                 const newIndex = (currentIndex + 1) % 7;
                 state.mealPlan.selectedDay = days[newIndex];
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
             }
             if (e.target.closest('#recipe-btn')) {
                 alert("The Recipes feature is coming soon!");
@@ -474,7 +462,7 @@ export function attachEventListeners() {
                 state.groceryList.push({ id: Date.now(), name: text.value.trim(), checked: false });
                 text.value = '';
             }
-            renderCurrentPage(); // Re-render just this page
+            renderCurrentPage();
         }
         if (e.target.id === 'add-card-form') {
             const name = document.getElementById('new-card-name');
@@ -490,7 +478,7 @@ export function attachEventListeners() {
                 name.value = '';
                 barcode.value = '';
             }
-            renderCurrentPage(); // Re-render just this page
+            renderCurrentPage();
         }
         if (e.target.id === 'add-todo-form') {
             const textEl = document.getElementById('new-todo-text');
@@ -499,7 +487,7 @@ export function attachEventListeners() {
                 state.todos.push({ id: Date.now(), text: text, checked: false });
                 textEl.value = '';
             }
-            renderCurrentPage(); // Re-render just this page
+            renderCurrentPage();
         }
         if (e.target.id === 'add-pantry-item-form') {
             const textEl = document.getElementById('new-pantry-item-name');
@@ -512,7 +500,7 @@ export function attachEventListeners() {
             if (text) {
                 state.pantry.push({ id: Date.now(), name: text, tag: tag });
                 textEl.value = '';
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
             }
         }
         if (e.target.id === 'add-tag-form') {
@@ -523,7 +511,7 @@ export function attachEventListeners() {
             if (newTag && !isDuplicate) {
                 state.pantryTags.push(newTag);
                 textEl.value = '';
-                renderCurrentPage(); // Re-render just this page
+                renderCurrentPage();
             } else if (isDuplicate) {
                 alert(`The category "${newTag}" already exists.`);
             }
@@ -573,14 +561,14 @@ function stopScanner() {
             .then(() => console.log("Scanner stopped."))
             .catch(err => console.warn("Error stopping scanner:", err));
     }
-    scannerContainer.classList.remove('is-visible'); // <-- UPDATED
+    scannerContainer.classList.remove('is-visible');
 }
 
 async function startScanner() {
     const scannerContainer = document.getElementById('scanner-container');
     const scannerStatus = document.getElementById('scanner-status');
 
-    scannerContainer.classList.add('is-visible'); // <-- UPDATED
+    scannerContainer.classList.add('is-visible');
     scannerStatus.innerText = "Requesting camera access...";
 
     if (typeof Html5Qrcode === 'undefined') {

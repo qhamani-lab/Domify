@@ -15,11 +15,24 @@ const initialState = {
     todos: [],
     groceryList: [],
     pantry: [],
-    lastUsedPantryTag: 'Uncategorized',
+    lastUsedPantryTag: 'Uncategorized', // Remembers last tag for adding
+
+    // --- UPDATED PANTRY TAGS ---
     pantryTags: [
-        'Uncategorized', 'Fruit', 'Vegetables', 'Meat', 'Dairy', 'Canned Goods',
-        'Spices', 'Sauces', 'Drinks', 'Snacks', 'Cleaning', 'Toiletries'
+        'Uncategorized',
+        'Fruit',
+        'Vegetables',
+        'Meat',
+        'Dairy',
+        'Canned Goods',
+        'Spices',
+        'Sauces',
+        'Drinks',
+        'Snacks',
+        'Cleaning',
+        'Toiletries'
     ],
+
     pantryShowAll: false,
     collapsedTags: [],
     editingPantryItemId: null,
@@ -27,7 +40,7 @@ const initialState = {
     // --- UPDATED MEAL PLAN ---
     mealPlan: {
         selectedDay: 'monday',
-        monday: { B: '', L: '', D: '', S: '' }, // Added S for Snack
+        monday: { B: '', L: '', D: '', S: '' },
         tuesday: { B: '', L: '', D: '', S: '' },
         wednesday: { B: '', L: '', D: '', S: '' },
         thursday: { B: '', L: '', D: '', S: '' },
@@ -70,12 +83,10 @@ export function loadState() {
     const savedState = localStorage.getItem('homeHubAppState');
     const savedParsed = savedState ? JSON.parse(savedState) : {};
 
-    // --- SPECIAL MERGE FOR MEALPLAN ---
-    // This ensures new properties like 'S' for snack are added to existing saved meal plans
+    // --- SPECIAL MERGE FOR MEALPLAN (Adds 'S' to old plans) ---
     if (savedParsed.mealPlan) {
         for (const day in initialState.mealPlan) {
             if (savedParsed.mealPlan[day]) {
-                // Merge the default day (with 'S') with the saved day
                 savedParsed.mealPlan[day] = { ...initialState.mealPlan[day], ...savedParsed.mealPlan[day] };
             }
         }
@@ -111,7 +122,6 @@ export function loadState() {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const todayIndex = new Date().getDay();
 
-    // Safety check for mealPlan
     state.mealPlan = state.mealPlan || { ...initialState.mealPlan };
     state.mealPlan.selectedDay = days[todayIndex];
 }
