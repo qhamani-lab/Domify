@@ -5,7 +5,6 @@ export let state = {};
 export let tempRoutine = {}; // Holds data for add/edit routine wizard
 
 // --- INITIAL STATE ---
-// This is the "blueprint" for a fresh start
 const initialState = {
     currentPage: 'home',
     users: [
@@ -16,19 +15,28 @@ const initialState = {
     todos: [],
     groceryList: [],
     pantry: [],
+    lastUsedPantryTag: 'Uncategorized',
+    pantryTags: [
+        'Uncategorized', 'Fruit', 'Vegetables', 'Meat', 'Dairy', 'Canned Goods',
+        'Spices', 'Sauces', 'Drinks', 'Snacks', 'Cleaning', 'Toiletries'
+    ],
+    pantryShowAll: false,
+    collapsedTags: [],
+    editingPantryItemId: null,
 
-    // --- NEW PANTRY STATE ---
-    pantryTags: ['Uncategorized', 'Canned Goods', 'Spices', 'Cleaning'], // Default tags
-    pantryShowAll: false, // Tracks the "Show All" toggle
-    collapsedTags: [], // Tracks which groups are folded
-    // --- END NEW PANTRY STATE ---
-
+    // --- UPDATED MEAL PLAN ---
     mealPlan: {
         selectedDay: 'monday',
-        monday: { B: '', L: '', D: '' }, tuesday: { B: '', L: '', D: '' }, wednesday: { B: '', L: '', D: '' },
-        thursday: { B: '', L: '', D: '' }, friday: { B: '', L: '', D: '' }, saturday: { B: '', L: '', D: '' },
-        sunday: { B: '', L: '', D: '' },
+        monday: { B: '', L: '', D: '', S: '' }, // Added S for Snack
+        tuesday: { B: '', L: '', D: '', S: '' },
+        wednesday: { B: '', L: '', D: '', S: '' },
+        thursday: { B: '', L: '', D: '', S: '' },
+        friday: { B: '', L: '', D: '', S: '' },
+        saturday: { B: '', L: '', D: '', S: '' },
+        sunday: { B: '', L: '', D: '', S: '' },
     },
+    // --- END UPDATE ---
+
     rewardsCards: [],
     marketplaceCategories: [
         { id: 'insurance', title: 'Home Insurance', icon: 'shield', description: 'Protect your home and belongings with trusted insurance partners.', offers: [{ name: 'Outsurance', deal: 'Get a R500 voucher on signup.', link: '#' }, { name: 'Santam', deal: '10% off your first year premium.', link: '#' }] },
@@ -60,22 +68,32 @@ export function saveState() {
 
 export function loadState() {
     const savedState = localStorage.getItem('homeHubAppState');
+    const savedParsed = savedState ? JSON.parse(savedState) : {};
 
-    // Merge initial state with saved state
-    // This ensures all properties from initialState are present
-    state = savedState ? { ...initialState, ...JSON.parse(savedState) } : { ...initialState };
+    // --- SPECIAL MERGE FOR MEALPLAN ---
+    // This ensures new properties like 'S' for snack are added to existing saved meal plans
+    if (savedParsed.mealPlan) {
+        for (const day in initialState.mealPlan) {
+            if (savedParsed.mealPlan[day]) {
+                // Merge the default day (with 'S') with the saved day
+                savedParsed.mealPlan[day] = { ...initialState.mealPlan[day], ...savedParsed.mealPlan[day] };
+            }
+        }
+    }
+    // --- END MERGE ---
+
+    state = { ...initialState, ...savedParsed };
 
     // --- MIGRATION & SAFETY LOGIC ---
-    // This block fixes the error by guaranteeing our new properties exist,
-    // even if loading old data.
+    const defaultTags = initialState.pantryTags;
+    const userTags = state.pantryTags || [];
+    state.pantryTags = [...new Set([...defaultTags, ...userTags])];
 
-    // If state.pantryTags is null/undefined, set it to the default
-    state.pantryTags = state.pantryTags || initialState.pantryTags;
     state.pantryShowAll = state.pantryShowAll || false;
     state.collapsedTags = state.collapsedTags || [];
+    state.editingPantryItemId = null;
+    state.lastUsedPantryTag = state.lastUsedPantryTag || 'Uncategorized';
 
-    // This loops through all pantry items and gives any old, "tag-less" 
-    // items a default tag so they don't get lost.
     if (state.pantry && state.pantry.forEach) {
         state.pantry.forEach(item => {
             if (!item.tag) {
@@ -85,18 +103,15 @@ export function loadState() {
     }
     // --- END MIGRATION LOGIC ---
 
-    // Validate the current page
     const validPages = ['home', 'grocery', 'pantry', 'rewards', 'buy', 'meals', 'settings', 'todo'];
     if (!validPages.includes(state.currentPage)) {
         state.currentPage = 'home';
     }
 
-    // Set default meal plan day
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const todayIndex = new Date().getDay();
 
-    if (!state.mealPlan) {
-        state.mealPlan = { ...initialState.mealPlan };
-    }
+    // Safety check for mealPlan
+    state.mealPlan = state.mealPlan || { ...initialState.mealPlan };
     state.mealPlan.selectedDay = days[todayIndex];
 }

@@ -1,32 +1,26 @@
 // js/render.js
 
 // --- IMPORTS ---
-// We import the state and ICONS so this file can use them
 import { state, saveState } from './state.js';
 import { ICONS } from './icons.js';
 
 // --- DOM ELEMENTS ---
-// Get element references once
 const pageContent = document.getElementById('page-content');
 const sidebarEl = document.getElementById('sidebar');
-// Export these so events.js can attach listeners to them
 export const modalEl = document.getElementById('modal');
 export const modalContentEl = document.getElementById('modal-content');
 
 
 // --- CORE RENDER FUNCTIONS ---
-
-// Export so main.js can call it
 export function renderAll() {
     renderSidebar();
     renderCurrentPage();
     updateTheme();
     saveState();
-    generateAllBarcodes(); // Render barcodes after all content is on the page
+    generateAllBarcodes();
 }
 
 function updateTheme() {
-    // Dark mode is removed, so we just ensure 'light' class is present
     document.documentElement.classList.add('light');
     document.documentElement.classList.remove('dark');
 }
@@ -36,7 +30,7 @@ function renderSidebar() {
         { id: 'home', label: 'Home', icon: 'dashboard' },
         { id: 'grocery', label: 'Grocery List', icon: 'shoppingCart' },
         { id: 'pantry', label: 'Pantry', icon: 'clipboard' },
-        { id: 'todo', label: 'To-Do List', icon: 'listBullet' }, // <-- This line is now correct
+        { id: 'todo', label: 'To-Do List', icon: 'listBullet' },
         { id: 'rewards', label: 'Rewards Cards', icon: 'creditCard' },
         { id: 'buy', label: 'Buy', icon: 'store' },
         { id: 'meals', label: 'Meal Plan', icon: 'utensils' },
@@ -65,14 +59,16 @@ function renderSidebar() {
     sidebarEl.innerHTML = `<div class="p-5 flex items-center justify-between border-b"><div class="flex items-center space-x-3">${ICONS.home}<span class="text-2xl font-bold text-dark">Domify</span></div><button id="close-sidebar-btn" class="md:hidden text-gray-600">${ICONS.x}</button></div><nav class="p-4 flex flex-col flex-1 overflow-y-auto"><div class="flex-1">${navLinks}</div><div>${settingsLink}</div></nav>`;
 }
 
-// Export so the pantry search in events.js can call it for a fast refresh
 export function renderCurrentPage() {
-    // ...
+    if (state.currentPage !== 'pantry') {
+        state.editingPantryItemId = null;
+    }
+
     switch (state.currentPage) {
         case 'home': renderHome(); break;
         case 'grocery': renderGroceryList(); break;
         case 'pantry': renderPantry(); break;
-        case 'todo': renderTodoList(); break; // <-- ADD THIS LINE
+        case 'todo': renderTodoList(); break;
         case 'rewards': renderRewards(); break;
         case 'buy': renderBuy(); break;
         case 'meals': renderMealPlanner(); break;
@@ -85,10 +81,37 @@ export function renderCurrentPage() {
 // --- PAGE RENDER FUNCTIONS ---
 
 function renderHome() {
-    const { solar, rewardsCards, groceryList, mealPlan, todos } = state;
+    const { solar, rewardsCards, groceryList, mealPlan } = state;
     const favoriteCard = rewardsCards.find(c => c.isFavorite);
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-    const todaysMeals = mealPlan[today] || { B: '', L: '', D: '' };
+    const todaysMeals = (mealPlan && mealPlan[today]) ? mealPlan[today] : { B: '', L: '', D: '', S: '' };
+
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+
+    let currentMealType = 'D';
+    let currentMealLabel = 'Dinner';
+
+    if (hour < 10 || (hour === 10 && minute < 30)) {
+        currentMealType = 'B';
+        currentMealLabel = 'Breakfast';
+    }
+    else if (hour < 14) {
+        currentMealType = 'L';
+        currentMealLabel = 'Lunch';
+    }
+
+    const currentMealText = todaysMeals[currentMealType] || '...';
+    const snackText = todaysMeals.S || '...';
+
+    const mealTileBody = `
+        <div class="mt-2 text-center">
+            <p class="text-sm text-gray-500">${currentMealLabel}</p>
+            <p class="text-2xl font-bold text-dark my-1 truncate" title="${currentMealText}">${currentMealText}</p>
+            <p class="text-xs text-gray-400 mt-2">Snack: <span class="font-medium text-gray-600">${snackText}</span></p>
+        </div>
+    `;
 
     pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8">
         <h1 class="text-3xl font-bold text-dark mb-6">Home</h1>
@@ -119,10 +142,31 @@ function renderHome() {
             
             <div class="dashboard-tile sm:col-span-1 bg-white p-4 rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer" data-page="grocery"><div class="flex justify-between items-start"><div><p class="font-bold text-lg text-dark">Groceries</p><p class="text-sm text-gray-500">${state.groceryList.filter(i => !i.checked).length} items to buy</p></div><span class="text-primary">${ICONS.shoppingCart}</span></div><ul class="mt-2 space-y-1 text-sm">${state.groceryList.filter(i => !i.checked).slice(0, 3).map(item => `<li class="text-gray-700">- ${item.name}</li>`).join('')} ${state.groceryList.filter(i => !i.checked).length > 3 ? '<li class="text-gray-500">...and more</li>' : ''}</ul></div>
             
-            <div class="dashboard-tile sm:col-span-1 bg-white p-4 rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer" data-page="meals"><div class="flex justify-between items-start"><div><p class="font-bold text-lg text-dark">Meal Plan</p><p class="text-sm text-gray-500">Today's Meals</p></div><span class="text-primary">${ICONS.utensils}</span></div><div class="mt-2 space-y-1 text-sm text-gray-700"><p><b>B:</b> ${todaysMeals.B || '...'}</p><p><b>L:</b> ${todaysMeals.L || '...'}</p><p><b>D:</b> ${todaysMeals.D || '...'}</p></div></div>
+            <div class="dashboard-tile sm:col-span-1 bg-white p-4 rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer" data-page="meals">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-bold text-lg text-dark">Meal Plan</p>
+                        <p class="text-sm text-gray-500">What's for...</p>
+                    </div>
+                    <span class="text-primary">${ICONS.utensils}</span>
+                </div>
+                ${mealTileBody}
+            </div>
             
-            ${favoriteCard ? `<div class="dashboard-tile sm:col-span-1 bg-white p-4 rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer" data-modal='barcode' data-card-id='${favoriteCard.id}'><div class="flex justify-between items-start"><div><p class="font-bold text-lg text-dark">Rewards</p><p class="text-sm text-gray-500">${favoriteCard.name}</p></div><span class="text-primary">${ICONS.creditCard}</span></div><div class="mt-4 flex flex-col items-center justify-center"><svg id="barcode-fav-${favoriteCard.id}"></svg><p class="text-xs text-gray-500 mt-2">Tap to enlarge</p></div></div>` : ''}
-        </div>
+            ${favoriteCard ? `<div class="dashboard-tile sm:col-span-1 bg-white p-4 rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer" data-modal='barcode' data-card-id='${favoriteCard.id}'>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-bold text-lg text-dark">Rewards</p>
+                        <p class="text-sm text-gray-500">Favorite Card</p>
+                    </div>
+                    <span class="text-primary">${ICONS.creditCard}</span>
+                </div>
+                <div class="mt-4 text-center">
+                    <p class="text-2xl font-bold text-dark truncate" title="${favoriteCard.name}">${favoriteCard.name}</p>
+                    <p class="text-sm text-gray-500 mt-2">Tap to show card</p>
+                </div>
+            </div>` : ''}
+            </div>
     </div>`;
 }
 
@@ -148,15 +192,12 @@ function renderGroceryList() {
     </div>`;
 }
 
-// *** THIS IS THE FIXED PANTRY FUNCTION ***
-// It now reads from state.pantrySearchTerm instead of using a cache
-// js/render.js
-
 function renderPantry() {
-    // --- 1. RENDER THE FORMS ---
-
-    // Create the <option> tags for the dropdown
-    const tagOptions = state.pantryTags.map(tag => `<option value="${tag}">${tag}</option>`).join('');
+    const tagOptions = state.pantryTags.map(tag => `
+        <option value="${tag}" ${state.lastUsedPantryTag === tag ? 'selected' : ''}>
+            ${tag}
+        </option>
+    `).join('');
 
     let formsHTML = `
         <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
@@ -167,11 +208,10 @@ function renderPantry() {
                     ${tagOptions}
                 </select>
                 <button type="submit" class="w-full bg-primary text-white font-bold py-2 px-4 rounded hover:bg-primary-dark flex items-center justify-center space-x-2">
-    ${ICONS.plus} Add Item
-</button>
+                    ${ICONS.plus} <span>Add Item</span>
+                </button>
             </form>
         </div>
-
         <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
             <h2 class="text-xl font-bold text-dark mb-3">Add New Category</h2>
             <form id="add-tag-form" class="flex gap-2">
@@ -182,12 +222,8 @@ function renderPantry() {
             </form>
         </div>
     `;
-
-    // --- 2. RENDER THE ITEM LIST (EITHER GROUPED OR "SHOW ALL") ---
     let listHTML = '';
-
     if (state.pantryShowAll) {
-        // "Show All" View: A single, flat list
         const allItems = state.pantry.map(item => renderPantryItem(item)).join('');
         listHTML = `
             <div class="bg-white p-4 rounded-lg shadow-sm">
@@ -196,16 +232,12 @@ function renderPantry() {
             </div>
         `;
     } else {
-        // "Grouped" View: Loop through tags and build groups
         listHTML = state.pantryTags.map(tag => {
             const itemsForTag = state.pantry.filter(item => item.tag === tag);
             const isCollapsed = state.collapsedTags.includes(tag);
-
-            // Don't show the group at all if it's empty
             if (itemsForTag.length === 0) {
                 return '';
             }
-
             return `
             <div class="bg-white rounded-lg shadow-sm mb-4 overflow-hidden">
                 <div data-tag="${tag}" class="toggle-collapse-btn flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50">
@@ -224,55 +256,73 @@ function renderPantry() {
         }).join('');
     }
 
-    // --- 3. COMBINE AND RENDER ---
     pageContent.innerHTML = `
-<div class="p-4 sm:p-6 lg:p-8">
-                <div class="flex justify-between items-center mb-6 max-w-5xl mx-auto">
-                    <h1 class="text-3xl font-bold text-dark">Pantry</h1>
-                    <button id="toggle-pantry-view" class="bg-white text-primary font-semibold py-2 px-4 rounded-lg shadow-sm hover:bg-primary-light">
-                        ${state.pantryShowAll ? 'Show Grouped' : 'Show All'}
-                    </button>
+        <div class="p-4 sm:p-6 lg:p-8">
+            <div class="flex justify-between items-center mb-6 max-w-5xl mx-auto">
+                <h1 class="text-3xl font-bold text-dark">Pantry</h1>
+                <button id="toggle-pantry-view" class="bg-white text-primary font-semibold py-2 px-4 rounded-lg shadow-sm hover:bg-primary-light">
+                    ${state.pantryShowAll ? 'Show Grouped' : 'Show All'}
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+                <div class="md:col-span-1 space-y-6">
+                    ${formsHTML}
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-                    <div class="md:col-span-1 space-y-6">
-                        ${formsHTML}
-                    </div>
-                    <div class="md:col-span-1">
-                        ${listHTML || `<p class="text-gray-500 text-center md:mt-10">Your pantry is empty. Add an item to get started.</p>`}
-                    </div>
+                <div class="md:col-span-1">
+                    ${listHTML || `<p class="text-gray-500 text-center md:mt-10">Your pantry is empty. Add an item to get started.</p>`}
                 </div>
             </div>
-        `;
-}
-
-// This is a new "helper" function.
-// Paste it right below the new renderPantry function.
-function renderPantryItem(item) {
-    // This is the HTML for a single item, which is used in both views
-    return `
-    <div class="flex items-center p-2 rounded hover:bg-gray-50">
-        <span class="flex-grow text-dark">${item.name}</span>
-        <button data-id="${item.id}" title="Move to List" class="move-pantry-item mr-2 text-primary hover:text-primary-dark p-1 rounded-full hover:bg-primary-light/50">
-            ${ICONS.shoppingCart}
-        </button>
-        <button data-id="${item.id}" title="Delete Item" class="delete-pantry-item text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-100">
-            ${ICONS.trash}
-        </button>
-    </div>
+        </div>
     `;
 }
-// *** END OF FIXED FUNCTION ***
+
+function renderPantryItem(item) {
+    if (state.editingPantryItemId === item.id) {
+        const editTagOptions = state.pantryTags.map(tag => `
+            <option value="${tag}" ${item.tag === tag ? 'selected' : ''}>
+                ${tag}
+            </option>
+        `).join('');
+        return `
+        <div class="flex items-center p-2 rounded bg-primary-light/50">
+            <span class="flex-grow text-dark font-semibold">${item.name}</span>
+            <select class="edit-pantry-tag-select mx-2 p-1 border rounded bg-white">
+                ${editTagOptions}
+            </select>
+            <button data-id="${item.id}" title="Save" class="save-pantry-item mr-1 text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-green-100">
+                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+            </button>
+            <button title="Cancel" class="cancel-edit-pantry text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100">
+                ${ICONS.x}
+            </button>
+        </div>
+        `;
+    } else {
+        return `
+        <div class="flex items-center p-2 rounded hover:bg-gray-50">
+            <span class="flex-grow text-dark">${item.name}</span>
+            <button data-id="${item.id}" title="Change Category" class="edit-pantry-item mr-2 text-gray-400 hover:text-primary p-1 rounded-full hover:bg-primary-light/50">
+                ${ICONS.edit}
+            </button>
+            <button data-id="${item.id}" title="Move to List" class="move-pantry-item mr-2 text-primary hover:text-primary-dark p-1 rounded-full hover:bg-primary-light/50">
+                ${ICONS.shoppingCart}
+            </button>
+            <button data-id="${item.id}" title="Delete Item" class="delete-pantry-item text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-100">
+                ${ICONS.trash}
+            </button>
+        </div>
+        `;
+    }
+}
+
 function renderTodoList() {
     pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8">
         <h1 class="text-3xl font-bold text-dark mb-6">To-Do List</h1>
         <div class="bg-white p-4 rounded-lg shadow-sm">
-
             <form id="add-todo-form" class="flex gap-2 mb-4">
                 <input type="text" id="new-todo-text" placeholder="Add new task..." class="flex-grow p-2 border rounded bg-gray-50 focus:ring-primary focus:border-primary"/>
                 <button type="submit" class="bg-primary text-white font-bold p-2 rounded hover:bg-primary-dark transition-colors duration-200">${ICONS.plus}</button>
             </form>
-
             <div id="todo-list" class="space-y-2 max-h-96 overflow-y-auto">
                 ${state.todos.map(item => `
                     <div class="flex items-center p-2 rounded hover:bg-gray-50">
@@ -281,12 +331,12 @@ function renderTodoList() {
                         <button data-id="${item.id}" class="delete-todo-item text-gray-400 hover:text-red-500">${ICONS.trash}</button>
                     </div>
                 `).join('')}
-
                 ${state.todos.length === 0 ? `<p class="text-gray-500 text-center">Your to-do list is empty.</p>` : ''}
             </div>
         </div>
     </div>`;
 }
+
 function renderRewards() {
     pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8"><h1 class="text-3xl font-bold text-dark mb-6">Rewards Cards</h1><div class="bg-white p-4 rounded-lg shadow-sm mb-8"><h2 class="text-xl font-bold text-dark mb-3">Add a New Card</h2><form id="add-card-form" class="space-y-4"><input type="text" id="new-card-name" placeholder="Card Name (e.g., Clicks)" class="w-full p-2 border rounded bg-gray-50 focus:ring-primary focus:border-primary"/><input type="text" id="new-card-barcode" placeholder="Barcode Number" class="w-full p-2 border rounded bg-gray-50 focus:ring-primary focus:border-primary"/><button type="submit" class="w-full bg-primary text-white font-bold py-2 px-4 rounded hover:bg-primary-dark">Add Card</button></form></div><div id="rewards-list" class="space-y-4">${state.rewardsCards.map(c => `<div class="bg-white p-4 rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-center justify-between"><div data-modal="barcode" data-card-id="${c.id}" class="cursor-pointer mb-4 sm:mb-0"><h3 class="text-lg font-bold text-dark">${c.name}</h3><div class="mt-2"><svg id="barcode-${c.id}"></svg></div></div><div class="flex items-center space-x-2"><button data-id="${c.id}" class="set-favorite-btn text-sm font-semibold py-1 px-3 rounded-full ${c.isFavorite ? 'bg-yellow-400 text-yellow-900' : 'bg-gray-200 hover:bg-gray-300'}">${c.isFavorite ? '★ Favorite' : 'Set Favorite'}</button><button data-id="${c.id}" class="delete-card-btn text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-100">${ICONS.trash}</button></div></div>`).join('') || `<p class="text-center text-gray-500">No cards added yet.</p>`}</div></div>`;
 }
@@ -297,20 +347,29 @@ function renderBuy() {
 
 function renderMealPlanner() {
     const day = state.mealPlan.selectedDay;
-    const dayMeals = state.mealPlan[day] || { B: '', L: '', D: '' };
+    const dayMeals = state.mealPlan[day] || { B: '', L: '', D: '', S: '' };
     pageContent.innerHTML = `<div class="p-4 sm:p-6 lg:p-8">
         <h1 class="text-3xl font-bold text-dark mb-4">Meal Planner</h1>
+        
         <div class="flex items-center justify-between mb-6 bg-white p-2 rounded-lg shadow-sm">
             <button id="prev-day-btn" class="p-2 rounded-full hover:bg-gray-100">${ICONS.chevronLeft}</button>
             <h2 class="text-2xl font-bold text-primary capitalize">${day}</h2>
             <button id="next-day-btn" class="p-2 rounded-full hover:bg-gray-100">${ICONS.chevronRight}</button>
         </div>
+
+        <button id="recipe-btn" class="w-full bg-primary-light/60 text-primary font-bold py-3 px-4 rounded-lg shadow-sm hover:bg-primary-light flex items-center justify-center space-x-2 mb-6">
+            ${ICONS.book}
+            <span>Find Recipes</span>
+        </button>
+
         <div class="bg-white p-6 rounded-lg shadow-sm">
             <div class="space-y-4">
-                ${['B', 'L', 'D'].map(mealType => `<div>
-                    <label class="text-lg font-semibold text-gray-600">${{ B: 'Breakfast', L: 'Lunch', D: 'Dinner' }[mealType]}</label>
-                    <input type="text" data-day="${day}" data-meal="${mealType}" value="${dayMeals[mealType]}" class="meal-input w-full mt-1 p-3 border rounded bg-gray-50 focus:ring-primary focus:border-primary text-lg"/>
+                
+                ${['B', 'L', 'D', 'S'].map(mealType => `<div>
+                    <label class="text-lg font-semibold text-gray-600">${{ B: 'Breakfast', L: 'Lunch', D: 'Dinner', S: 'Snacks' }[mealType]}</label>
+                    <input type="text" data-day="${day}" data-meal="${mealType}" value="${dayMeals[mealType] || ''}" class="meal-input w-full mt-1 p-3 border rounded bg-gray-50 focus:ring-primary focus:border-primary text-lg"/>
                 </div>`).join('')}
+
             </div>
         </div>
     </div>`;
@@ -326,17 +385,15 @@ function renderSettings() {
 }
 
 // --- MODAL & UTILITY RENDER FUNCTIONS ---
-
 function generateAllBarcodes() {
-    // Needs to run after render, so use a small timeout
     setTimeout(() => {
-        // Add a check to make sure the library is loaded
         if (typeof JsBarcode !== 'function') {
             console.warn("JsBarcode library not loaded yet.");
             return;
         }
 
-        // 1. Render all barcodes on the Rewards page
+        // This logic is now simpler. We ONLY generate barcodes when the modal is opened.
+        // This function still needs to render the barcodes on the REWARDS page.
         state.rewardsCards.forEach(card => {
             let el = document.getElementById(`barcode-${card.id}`);
             if (el) {
@@ -350,25 +407,12 @@ function generateAllBarcodes() {
             }
         });
 
-        // 2. Render the *specific* favorite card barcode on the dashboard
-        const favoriteCard = state.rewardsCards.find(c => c.isFavorite);
-        if (favoriteCard) {
-            const favId = favoriteCard.id;
-            let favEl = document.getElementById(`barcode-fav-${favId}`);
-            if (favEl) {
-                try {
-                    JsBarcode(favEl, favoriteCard.barcode, {
-                        format: "CODE128", displayValue: false, height: 40, margin: 0, width: 2
-                    });
-                } catch (e) {
-                    console.warn("Could not generate barcode for fav card " + favId, e.message);
-                }
-            }
-        }
-    }, 0); // A 0ms timeout waits for the DOM to update
+        // The dashboard tile barcode is GONE, so we don't need to render it.
+        // const favoriteCard = state.rewardsCards.find(c => c.isFavorite);
+        // ... (removed) ...
+    }, 0);
 }
 
-// Export so events.js can call it
 export function renderHotBotModal(view = { name: 'main', tab: 'Routine' }) {
     const { geyser } = state;
 
@@ -427,7 +471,6 @@ export function renderHotBotModal(view = { name: 'main', tab: 'Routine' }) {
     modalEl.classList.remove('hidden');
 }
 
-// Export so events.js can call it
 export function renderSolarModal(view = { tab: 'Insights', timeframe: '1d' }) {
     const { solar } = state;
     const mainView = `
@@ -605,5 +648,22 @@ export function renderSolarModal(view = { tab: 'Insights', timeframe: '1d' }) {
             `;
             break;
     }
+    modalEl.classList.remove('hidden');
+}
+
+// --- NEW FUNCTION: LOADSHEDDING MODAL ---
+export function renderLoadsheddingModal() {
+    const currentArea = state.settings.loadshedding.area || '';
+    modalContentEl.innerHTML = `
+        <div class="p-4 border-b flex justify-between items-center">
+            <h2 class="text-xl font-bold">Loadshedding</h2>
+            <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800">${ICONS.x}</button>
+        </div>
+        <div class="p-6 space-y-4">
+            <label for="loadshedding-area-input" class="block text-sm font-medium text-gray-700">Enter your area name or number</label>
+            <input type="text" id="loadshedding-area-input" class="w-full mt-1 p-2 border rounded bg-gray-50 focus:ring-primary focus:border-primary" value="${currentArea}" placeholder="e.g., 'City Bowl, 8'">
+            <button id="save-loadshedding-btn" class="w-full bg-primary text-white font-bold py-2 px-4 rounded hover:bg-primary-dark">Save Area</button>
+        </div>
+    `;
     modalEl.classList.remove('hidden');
 }
