@@ -52,8 +52,8 @@ const initialState = {
             title: 'Wetility — Rethink Black Friday',
             subtitle: 'Special Black Friday energy deals',
             link: 'https://www.wetility.energy',
-            imageDesktop: './assets/images/wetility.png',
-            imageMobile: './assets/images/wetility.png'
+            imageDesktop: './assets/images/wetility.jpg',
+            imageMobile: './assets/images/wetility.jpg'
         },
         {
             id: 'feat-balwin-xmas',
