@@ -70,6 +70,11 @@ export function renderSidebar() {
         sidebarHomeIcon.innerHTML = ICONS.home;
     }
 
+    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+    if (closeSidebarBtn && ICONS && ICONS.x) {
+        closeSidebarBtn.innerHTML = ICONS.x;
+    }
+
     if (sidebarNav) {
         sidebarNav.innerHTML = `
             <div id="sidebar-highlighter"></div>

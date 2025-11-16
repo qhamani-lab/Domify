@@ -44,7 +44,7 @@ export function attachEventListeners() {
         sidebarOverlay.classList.add('opacity-0');
         setTimeout(() => {
             sidebarOverlay.classList.add('hidden');
-        }, 400); // Should match CSS duration
+        }, 300); // Should match CSS duration
     }
 
     // in js/events.js

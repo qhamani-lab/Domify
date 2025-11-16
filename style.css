@@ -94,7 +94,8 @@ body {
 /* =========================================
 === 4. PREMIUM CARD STYLES (GLASS + DEPTH)
 ========================================= */
-#sidebar,
+/* --- THIS IS THE FIX --- */
+/* I removed "#sidebar," from this selector. */
 #modal-content,
 .dashboard-tile,
 .bg-white {
@@ -108,6 +109,9 @@ body {
     position: relative;
     overflow: hidden;
 }
+
+/* --- END OF FIX --- */
+
 
 .dashboard-tile:hover,
 .dashboard-tile:active {
@@ -254,6 +258,15 @@ body {
 /* Sidebar */
 #sidebar {
     transition: transform 0.4s var(--ios-ease);
+    /* Make sure sidebar still gets the card styles */
+    background: var(--card-bg) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    border-radius: 1rem;
+    /* overflow: hidden; */
+    /* 'overflow: hidden' can hide shadows, keep an eye on this */
 }
 
 #sidebar-overlay {
