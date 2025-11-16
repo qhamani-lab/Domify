@@ -5,6 +5,7 @@ import { state, saveState, tempRoutine } from './state.js';
 import {
     renderAll,
     renderCurrentPage,
+    updateTheme,
     renderSidebar,
     updateSidebarHighlighter,
     renderHotBotModal,
@@ -13,11 +14,13 @@ import {
     renderLoadingModal,
     renderReceiptModal,
     renderNameCardModal,
+    renderWifiModal,
     modalEl,
     modalContentEl
 } from './render.js';
 
 // --- GLOBALS FOR SCANNER ---
+let currentScanCallback = null;
 let html5QrCodeScanner = null;
 
 // --- MAIN FUNCTION ---
@@ -26,7 +29,7 @@ export function attachEventListeners() {
     const sidebarEl = document.getElementById('sidebar');
     const pageContent = document.getElementById('page-content');
     const scannerContainer = document.getElementById('scanner-container');
-    const sidebarOverlay = document.getElementById('sidebar-overlay'); // <-- Get overlay
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
 
     // --- SIDEBAR LISTENERS (UPDATED) ---
     document.getElementById('open-sidebar-btn').addEventListener('click', () => {
@@ -44,6 +47,7 @@ export function attachEventListeners() {
         }, 400); // Should match CSS duration
     }
 
+    // in js/events.js
     sidebarEl.addEventListener('click', (e) => {
         if (e.target.closest('#close-sidebar-btn')) {
             closeSidebar();
@@ -52,10 +56,28 @@ export function attachEventListeners() {
         if (navLink) {
             e.preventDefault();
 
+            // --- UPDATED: Page Transition Logic ---
             state.currentPage = navLink.dataset.page;
-            renderCurrentPage();
-            renderSidebar();
-            setTimeout(updateSidebarHighlighter, 50);
+            renderCurrentPage(); // 1. Render the new page content
+
+            // --- THIS IS THE FIX ---
+            // 2. Remove the old active link styles
+            document.querySelectorAll('#sidebar-nav .nav-link').forEach(link => {
+                link.classList.remove('text-primary', 'font-bold');
+                link.classList.add('text-dark');
+                link.querySelector('span').classList.remove('text-primary');
+                link.querySelector('span').classList.add('text-dark');
+            });
+
+            // 3. Add new active styles to the clicked link
+            navLink.classList.add('text-primary', 'font-bold');
+            navLink.classList.remove('text-dark');
+            navLink.querySelector('span').classList.add('text-primary');
+            navLink.querySelector('span').classList.remove('text-dark');
+
+            // 4. Just move the highlighter
+            updateSidebarHighlighter();
+            // --- END FIX ---
 
             saveState();
 
@@ -80,12 +102,14 @@ export function attachEventListeners() {
         // Page/Modal Tiles
         const pageTile = e.target.closest('[data-page]');
         if (pageTile) {
+            // --- UPDATED: Page Transition Logic ---
             state.currentPage = pageTile.dataset.page;
-            renderCurrentPage();
-            renderSidebar();
-            setTimeout(updateSidebarHighlighter, 50);
+            renderCurrentPage(); // This handles the animation
+            renderSidebar(); // Need to re-render sidebar to show new active link
+            setTimeout(updateSidebarHighlighter, 50); // Update highlighter
             saveState();
             return;
+            // --- END UPDATE ---
         }
 
         const modalTile = e.target.closest('[data-modal]');
@@ -99,10 +123,10 @@ export function attachEventListeners() {
                 if (card) {
 
                     if (card.type === 'qrcode') {
-                        modalContentEl.innerHTML = `<div class="p-4 text-center bg-white rounded-lg">
+                        modalContentEl.innerHTML = `<div class="text-dark dark:text-white"><div class="p-4 text-center bg-white rounded-2x1">
                                                     <h3 class="text-xl font-bold mb-4">${card.name}</h3>
                                                     <div class="flex justify-center" id="modal-qr-display"></div>
-                                                </div>`;
+                                                </div></div>`;
                         modalEl.classList.add('is-visible');
 
                         setTimeout(() => {
@@ -121,12 +145,12 @@ export function attachEventListeners() {
                         }, 10);
 
                     } else {
-                        modalContentEl.innerHTML = `<div class="p-4 text-center bg-white rounded-lg">
+                        modalContentEl.innerHTML = `<div class="text-dark dark:text-white"><div class="p-4 text-center bg-white rounded-2x1">
                                                     <h3 class="text-xl font-bold mb-4">${card.name}</h3>
                                                     <div class="flex justify-center">
                                                         <svg id="modal-barcode-display"></svg>
                                                     </div>
-                                                </div>`;
+                                                </div></div>`;
                         modalEl.classList.add('is-visible');
 
                         setTimeout(() => {
@@ -168,7 +192,10 @@ export function attachEventListeners() {
             if (e.target.closest('.delete-grocery-item')) {
                 const id = parseInt(e.target.closest('.delete-grocery-item').dataset.id);
                 state.groceryList = state.groceryList.filter(i => i.id !== id);
-                renderCurrentPage(); // Re-render only on delete
+                // Remove the row from the DOM directly to avoid a full re-render
+                const row = document.querySelector(`.grocery-item-row[data-item-id="${id}"]`);
+                if (row) row.remove();
+                saveState();
             }
         }
 
@@ -211,12 +238,46 @@ export function attachEventListeners() {
                     state.groceryList.push({ id: Date.now(), name: item.name, checked: false });
                 }
                 state.pantry = state.pantry.filter(i => i.id !== id);
-                renderCurrentPage();
+                // Remove pantry row from DOM instead of full re-render
+                const pantryRow = document.querySelector(`.pantry-item-row button[data-id="${id}"]`)?.closest('.pantry-item-row');
+                if (pantryRow) {
+                    const container = pantryRow.closest('.space-y-2');
+                    pantryRow.remove();
+                    // Update the tag count
+                    if (container) {
+                        const tagBtn = container.closest('.collapsible-content')?.previousElementSibling;
+                        if (tagBtn && tagBtn.dataset.tag) {
+                            const count = container.querySelectorAll('.pantry-item-row').length;
+                            const countSpan = tagBtn.querySelector('h2');
+                            if (countSpan) {
+                                const tag = tagBtn.dataset.tag;
+                                countSpan.textContent = `${tag} (${count})`;
+                            }
+                        }
+                    }
+                }
+                saveState();
             }
             if (e.target.closest('.delete-pantry-item')) {
                 const id = parseInt(e.target.closest('.delete-pantry-item').dataset.id);
                 state.pantry = state.pantry.filter(i => i.id !== id);
-                renderCurrentPage();
+                const pantryRow = document.querySelector(`.pantry-item-row button[data-id="${id}"]`)?.closest('.pantry-item-row');
+                if (pantryRow) {
+                    const container = pantryRow.closest('.space-y-2');
+                    pantryRow.remove();
+                    if (container) {
+                        const tagBtn = container.closest('.collapsible-content')?.previousElementSibling;
+                        if (tagBtn && tagBtn.dataset.tag) {
+                            const count = container.querySelectorAll('.pantry-item-row').length;
+                            const countSpan = tagBtn.querySelector('h2');
+                            if (countSpan) {
+                                const tag = tagBtn.dataset.tag;
+                                countSpan.textContent = `${tag} (${count})`;
+                            }
+                        }
+                    }
+                }
+                saveState();
             }
 
             const collapseBtn = e.target.closest('.toggle-collapse-btn');
@@ -253,40 +314,140 @@ export function attachEventListeners() {
         // REWARDS PAGE
         else if (state.currentPage === 'rewards') {
             if (e.target.closest('#scan-card-btn')) {
-                startScanner();
+                // Define what to do on a successful rewards scan
+                const rewardsScanCallback = (decodedText, decodedResult) => {
+                    renderNameCardModal(decodedText, decodedResult.result.format.formatName);
+                };
+                startScanner(rewardsScanCallback);
             }
 
             if (e.target.closest('.delete-card-btn')) {
+                e.stopPropagation(); // <-- ADD THIS LINE
                 const id = parseInt(e.target.closest('.delete-card-btn').dataset.id);
                 state.rewardsCards = state.rewardsCards.filter(c => c.id !== id);
-                renderCurrentPage();
+                // Remove the card tile from the DOM directly
+                const cardTile = document.querySelector(`[data-card-id="${id}"]`);
+                if (cardTile) cardTile.remove();
+                saveState();
             }
             if (e.target.closest('.set-favorite-btn')) {
+                e.stopPropagation(); // <-- ADD THIS LINE
                 const id = parseInt(e.target.closest('.set-favorite-btn').dataset.id);
                 state.rewardsCards.forEach(c => c.isFavorite = (c.id === id ? !c.isFavorite : false));
-                renderCurrentPage();
+                // Update favorite button classes without re-rendering the whole page
+                document.querySelectorAll('.set-favorite-btn').forEach(btn => {
+                    const btnId = parseInt(btn.dataset.id);
+                    const card = state.rewardsCards.find(c => c.id === btnId);
+                    if (card && card.isFavorite) {
+                        btn.classList.remove('text-gray-300');
+                        btn.classList.add('text-yellow-400');
+                    } else {
+                        btn.classList.remove('text-yellow-400');
+                        btn.classList.add('text-gray-300');
+                    }
+                });
+                saveState();
             }
         }
 
-        // BUY PAGE
-        else if (state.currentPage === 'buy') {
+        // EXPLORE PAGE (renamed from 'buy')
+        else if (state.currentPage === 'explore') {
             if (e.target.closest('.view-offers-btn')) {
                 const catId = e.target.closest('.view-offers-btn').dataset.categoryId;
                 const cat = state.marketplaceCategories.find(c => c.id === catId);
                 if (cat) {
-                    modalContentEl.innerHTML = `<div class="p-6"><h2 class="text-2xl font-bold text-dark mb-4">${cat.title} Offers</h2><div class="space-y-3">${cat.offers.map(o => `<a href="${o.link}" target="_blank" class="block p-4 bg-primary-light/40 rounded-lg hover:bg-primary-light/80"><p class="font-bold text-primary">${o.name}</p><p class="text-sm text-gray-700">${o.deal}</p></a>`).join('')}</div></div>`;
+                    modalContentEl.innerHTML = `<div class="text-dark dark:text-white"><div class="p-6"><h2 class="text-2xl font-bold mb-4">${cat.title} Offers</h2><div class="space-y-3">${cat.offers.map(o => `<a href="${o.link}" target="_blank" class="block p-4 bg-primary-light/40 rounded-2x1 hover:bg-primary-light/80"><p class="font-bold text-primary">${o.name}</p><p class="text-sm text-gray-700">${o.deal}</p></a>`).join('')}</div></div></div>`;
                     modalEl.classList.add('is-visible');
                 }
             }
         }
 
         // SETTINGS PAGE
+        // in js/events.js
+        // ... inside pageContent.addEventListener('click', ...)
+
+        // in js/events.js
         else if (state.currentPage === 'settings') {
-            if (e.target.id === 'loadshedding-btn') {
+            if (e.target.closest('#loadshedding-btn')) {
                 renderLoadsheddingModal();
             }
+            if (e.target.closest('#wifi-settings-btn')) {
+                renderWifiModal();
+            }
+            if (e.target.closest('#dark-mode-toggle')) {
+                // This logic is correct
+                state.settings.theme = state.settings.theme === 'light' ? 'dark' : 'light';
+                saveState();
+                updateTheme();
+                // Update the toggle UI and status text without re-rendering the whole page
+                const toggleBtn = document.getElementById('dark-mode-toggle');
+                if (toggleBtn) {
+                    toggleBtn.classList.toggle('bg-primary', state.settings.theme === 'dark');
+                    toggleBtn.classList.toggle('bg-gray-300', state.settings.theme !== 'dark');
+                    const inner = toggleBtn.querySelector('div');
+                    if (inner) inner.classList.toggle('translate-x-6', state.settings.theme === 'dark');
+                    const container = toggleBtn.closest('.flex');
+                    if (container) {
+                        const statusP = container.querySelector('p');
+                        if (statusP) statusP.textContent = state.settings.theme === 'dark' ? 'On' : 'Off';
+                    }
+                }
+            }
+            if (e.target.closest('#notifications-toggle')) {
+                // --- NEW NOTIFICATION LOGIC ---
+                if (state.settings.notifications) {
+                    // If it's ON, just turn it OFF
+                    state.settings.notifications = false;
+                    saveState();
+                    // Update the toggle UI and status text without re-rendering
+                    const toggleBtn = document.getElementById('notifications-toggle');
+                    if (toggleBtn) {
+                        toggleBtn.classList.remove('bg-primary');
+                        toggleBtn.classList.add('bg-gray-300');
+                        const inner = toggleBtn.querySelector('div');
+                        if (inner) inner.classList.remove('translate-x-6');
+                        const container = toggleBtn.closest('.flex');
+                        if (container) {
+                            const statusP = container.querySelector('p');
+                            if (statusP) statusP.textContent = 'Disabled';
+                        }
+                    }
+                } else {
+                    // If it's OFF, ask for permission first
+                    if ("Notification" in window) {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === "granted") {
+                                state.settings.notifications = true;
+                                new Notification("Domify", { body: "Notifications enabled!" });
+                                // Update the toggle UI
+                                const toggleBtn = document.getElementById('notifications-toggle');
+                                if (toggleBtn) {
+                                    toggleBtn.classList.add('bg-primary');
+                                    toggleBtn.classList.remove('bg-gray-300');
+                                    const inner = toggleBtn.querySelector('div');
+                                    if (inner) inner.classList.add('translate-x-6');
+                                    const container = toggleBtn.closest('.flex');
+                                    if (container) {
+                                        const statusP = container.querySelector('p');
+                                        if (statusP) statusP.textContent = 'Enabled';
+                                    }
+                                }
+                            } else {
+                                state.settings.notifications = false;
+                                alert("Notifications were denied. You may need to change this in your browser settings.");
+                            }
+                            saveState();
+                        });
+                    } else {
+                        alert("This browser does not support push notifications.");
+                    }
+                }
+                // --- END NEW LOGIC ---
+            }
+            if (e.target.closest('#faq-btn')) {
+                alert("FAQ Page coming soon!");
+            }
         }
-
         // TO-DO PAGE
         else if (state.currentPage === 'todo') {
             const todoCheckbox = e.target.closest('.toggle-todo-item');
@@ -304,7 +465,9 @@ export function attachEventListeners() {
             if (deleteButton) {
                 const id = parseInt(deleteButton.dataset.id);
                 state.todos = state.todos.filter(t => t.id !== id);
-                renderCurrentPage();
+                const row = document.querySelector(`.todo-item-row[data-item-id="${id}"]`);
+                if (row) row.remove();
+                saveState();
             }
         }
 
@@ -316,12 +479,29 @@ export function attachEventListeners() {
             if (e.target.closest('#prev-day-btn')) {
                 const newIndex = (currentIndex - 1 + 7) % 7;
                 state.mealPlan.selectedDay = days[newIndex];
-                renderCurrentPage();
+                // Update meal planner header and inputs without full re-render
+                const newDay = state.mealPlan.selectedDay;
+                const header = document.querySelector('.page-wrapper h2.text-2xl.font-bold.text-primary');
+                if (header) header.textContent = newDay;
+                document.querySelectorAll('.meal-input').forEach(input => {
+                    const mealType = input.dataset.meal;
+                    input.dataset.day = newDay;
+                    input.value = (state.mealPlan[newDay] && state.mealPlan[newDay][mealType]) ? state.mealPlan[newDay][mealType] : '';
+                });
+                saveState();
             }
             if (e.target.closest('#next-day-btn')) {
                 const newIndex = (currentIndex + 1) % 7;
                 state.mealPlan.selectedDay = days[newIndex];
-                renderCurrentPage();
+                const newDay = state.mealPlan.selectedDay;
+                const header = document.querySelector('.page-wrapper h2.text-2xl.font-bold.text-primary');
+                if (header) header.textContent = newDay;
+                document.querySelectorAll('.meal-input').forEach(input => {
+                    const mealType = input.dataset.meal;
+                    input.dataset.day = newDay;
+                    input.value = (state.mealPlan[newDay] && state.mealPlan[newDay][mealType]) ? state.mealPlan[newDay][mealType] : '';
+                });
+                saveState();
             }
             if (e.target.closest('#recipe-btn')) {
                 alert("The Recipes feature is coming soon!");
@@ -334,7 +514,7 @@ export function attachEventListeners() {
         // Main HotBot tabs
         if (e.target.closest('.hotbot-tab-btn')) { renderHotBotModal({ name: 'main', tab: e.target.closest('.hotbot-tab-btn').dataset.tab }); }
         // SolarBot Tabs
-        if (e.target.closest('.solarbot-tab-btn')) { renderSolarModal({ tab: e.target.closest('.solarbot-tab-btn').dataset.tab, timeframe: '1d' }); }
+        if (e.target.closest('.solarbot-tab-btn')) { renderSolarModal({ tab: 'Insights', timeframe: '1d' }); }
         // SolarBot Timeframe Tabs
         if (e.target.closest('.solarbot-timeframe-btn')) { renderSolarModal({ tab: 'Insights', timeframe: e.target.closest('.solarbot-timeframe-btn').dataset.timeframe }); }
         // SolarBot Automation Clicks
@@ -377,7 +557,42 @@ export function attachEventListeners() {
         // Wizard Navigation
         const wizardContainer = modalContentEl.querySelector('[data-step]');
         if (wizardContainer) {
-            // (All wizard logic)
+            const currentStep = parseInt(wizardContainer.dataset.step);
+            const viewName = tempRoutine.id ? 'edit-routine' : 'add-routine';
+
+            if (e.target.closest('.wizard-back-btn')) {
+                renderHotBotModal({ name: viewName, step: currentStep - 1 });
+            }
+            if (e.target.closest('.wizard-next-btn')) {
+                if (document.getElementById('routine-start-time')) { tempRoutine.startTime = document.getElementById('routine-start-time').value; tempRoutine.endTime = document.getElementById('routine-end-time').value; }
+
+                if (e.target.closest('.wizard-next-btn').innerText.includes('Save')) {
+                    const finalRoutine = { id: tempRoutine.id || Date.now(), time: `${tempRoutine.startTime} - ${tempRoutine.endTime}`, days: tempRoutine.days.join(', ') || 'No days selected', mode: tempRoutine.mode, active: true };
+                    if (tempRoutine.id) {
+                        const index = state.geyser.routines.findIndex(r => r.id === tempRoutine.id);
+                        state.geyser.routines[index] = finalRoutine;
+                    } else {
+                        state.geyser.routines.push(finalRoutine);
+                    }
+                    renderHotBotModal({ name: 'main', tab: 'Routine' });
+                } else {
+                    renderHotBotModal({ name: viewName, step: currentStep + 1 });
+                }
+            }
+            // Wizard data capture
+            if (e.target.closest('.routine-type-btn')) { tempRoutine.type = e.target.closest('.routine-type-btn').dataset.type; renderHotBotModal({ name: viewName, step: 2 }); }
+            if (e.target.closest('.routine-day-btn')) {
+                const startTimeInput = document.getElementById('routine-start-time');
+                const endTimeInput = document.getElementById('routine-end-time');
+                if (startTimeInput) tempRoutine.startTime = startTimeInput.value;
+                if (endTimeInput) tempRoutine.endTime = endTimeInput.value;
+
+                const day = e.target.closest('.routine-day-btn').dataset.day;
+                if (tempRoutine.days.includes(day)) tempRoutine.days = tempRoutine.days.filter(d => d !== day);
+                else tempRoutine.days.push(day);
+                renderHotBotModal({ name: viewName, step: 2 });
+            }
+            if (e.target.closest('.routine-mode-btn')) { tempRoutine.mode = e.target.closest('.routine-mode-btn').dataset.mode; renderHotBotModal({ name: viewName, step: 3 }); }
         }
 
         // Handle Loadshedding Modal Save
@@ -413,7 +628,7 @@ export function attachEventListeners() {
             });
 
             modalEl.classList.remove('is-visible');
-            renderAll();
+            renderCurrentPage();
         }
 
         // Handle Save Scanned Card
@@ -438,10 +653,55 @@ export function attachEventListeners() {
                 });
 
                 modalEl.classList.remove('is-visible');
-                renderAll();
+                renderCurrentPage();
             } else {
                 alert("Please enter a name for the card.");
             }
+        }
+
+        // Handle Scan Wi-Fi Button
+        if (e.target.closest('#scan-wifi-qr-btn')) {
+            // Define what to do on a successful Wi-Fi scan
+            const wifiScanCallback = (decodedText, decodedResult) => {
+                // A Wi-Fi string looks like: WIFI:T:WPA;S:MyNetworkName;P:MyPassword;;
+                try {
+                    const ssidMatch = decodedText.match(/S:([^;]+);/);
+                    const passMatch = decodedText.match(/P:([^;]+);/);
+
+                    if (ssidMatch && ssidMatch[1]) {
+                        state.settings.wifi.ssid = ssidMatch[1];
+                        state.settings.wifi.type = 'qrcode'; // Set type to QR
+                        if (passMatch && passMatch[1]) {
+                            state.settings.wifi.password = passMatch[1];
+                        }
+                        saveState();
+                        renderWifiModal(); // Re-render the modal to show the new data
+                    } else {
+                        alert("Could not find a Wi-Fi network name in this QR code.");
+                    }
+                } catch (err) {
+                    alert("Failed to read Wi-Fi QR code.");
+                    console.error("Wi-Fi parse error:", err);
+                }
+            };
+
+            // Close the modal *before* starting the scanner
+            modalEl.classList.remove('is-visible');
+            startScanner(wifiScanCallback);
+        }
+
+        // Handle Save Wi-Fi Button
+        if (e.target.closest('#save-wifi-btn')) {
+            const password = modalContentEl.querySelector('#wifi-password-input').value;
+
+            state.settings.wifi.password = password;
+            if (!state.settings.wifi.ssid) {
+                state.settings.wifi.ssid = "Manual Network"; // Placeholder
+                state.settings.wifi.type = "manual";
+            }
+            saveState();
+            modalEl.classList.remove('is-visible');
+            renderCurrentPage(); // Re-render settings page
         }
     });
 
@@ -459,35 +719,53 @@ export function attachEventListeners() {
         if (e.target.id === 'add-grocery-form') {
             const text = document.getElementById('new-grocery-item');
             if (text.value.trim()) {
-                state.groceryList.push({ id: Date.now(), name: text.value.trim(), checked: false });
+                const item = { id: Date.now(), name: text.value.trim(), checked: false };
+                state.groceryList.push(item);
+                // Add row to DOM instead of full re-render
+                const list = document.getElementById('grocery-list');
+                if (list) {
+                    const newRow = document.createElement('div');
+                    newRow.className = 'grocery-item-row flex items-center p-2 rounded hover:bg-primary-light/30 transition-colors';
+                    newRow.dataset.itemId = item.id;
+                    newRow.innerHTML = `
+                        <input type="checkbox" data-id="${item.id}" class="task-checkbox toggle-grocery-item h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" />
+                        <span class="task-text text-dark flex-grow mx-3">${item.name}</span>
+                        <button data-id="${item.id}" class="delete-grocery-item text-gray-400 hover:text-red-500">${ICONS.trash}</button>
+                    `;
+                    list.insertBefore(newRow, list.firstChild);
+                    // Remove "empty" message if it exists
+                    const emptyMsg = list.querySelector('p.text-center.text-gray-500');
+                    if (emptyMsg) emptyMsg.remove();
+                }
                 text.value = '';
+                saveState();
             }
-            renderCurrentPage();
         }
-        if (e.target.id === 'add-card-form') {
-            const name = document.getElementById('new-card-name');
-            const barcode = document.getElementById('new-card-barcode');
-            if (name.value.trim() && barcode.value.trim()) {
-                state.rewardsCards.push({
-                    id: Date.now(),
-                    name: name.value.trim(),
-                    barcode: barcode.value.trim(),
-                    isFavorite: false,
-                    type: 'barcode'
-                });
-                name.value = '';
-                barcode.value = '';
-            }
-            renderCurrentPage();
-        }
+
         if (e.target.id === 'add-todo-form') {
             const textEl = document.getElementById('new-todo-text');
             const text = textEl.value.trim();
             if (text) {
-                state.todos.push({ id: Date.now(), text: text, checked: false });
+                const item = { id: Date.now(), text: text, checked: false };
+                state.todos.push(item);
+                // Add row to DOM instead of full re-render
+                const list = document.getElementById('todo-list');
+                if (list) {
+                    const newRow = document.createElement('div');
+                    newRow.className = 'todo-item-row flex items-center p-2 rounded hover:bg-primary-light/30 transition-colors';
+                    newRow.dataset.itemId = item.id;
+                    newRow.innerHTML = `
+                        <input type="checkbox" data-id="${item.id}" class="task-checkbox toggle-todo-item h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" />
+                        <span class="task-text text-dark flex-grow mx-3">${item.text}</span>
+                        <button data-id="${item.id}" class="delete-todo-item text-gray-400 hover:text-red-500">${ICONS.trash}</button>
+                    `;
+                    list.insertBefore(newRow, list.firstChild);
+                    const emptyMsg = list.querySelector('p.text-center.text-gray-500');
+                    if (emptyMsg) emptyMsg.remove();
+                }
                 textEl.value = '';
+                saveState();
             }
-            renderCurrentPage();
         }
         if (e.target.id === 'add-pantry-item-form') {
             const textEl = document.getElementById('new-pantry-item-name');
@@ -498,9 +776,37 @@ export function attachEventListeners() {
             state.lastUsedPantryTag = tag;
 
             if (text) {
-                state.pantry.push({ id: Date.now(), name: text, tag: tag });
+                const item = { id: Date.now(), name: text, tag: tag };
+                state.pantry.push(item);
+                // Find the section for this tag and add the item
+                const tagButtons = document.querySelectorAll('[data-tag]');
+                let found = false;
+                for (const btn of tagButtons) {
+                    if (btn.dataset.tag === tag) {
+                        const collapsibleContent = btn.closest('.bg-white').querySelector('.space-y-2');
+                        if (collapsibleContent) {
+                            const newRow = document.createElement('div');
+                            newRow.className = 'pantry-item-row flex items-center p-2 rounded hover:bg-primary-light/30 transition-colors';
+                            newRow.innerHTML = `
+                                <span class="flex-grow text-dark">${item.name}</span>
+                                <button data-id="${item.id}" class="edit-pantry-item mr-2 text-gray-400 hover:text-primary p-1 rounded-full hover:bg-primary-light/50">${ICONS.edit}</button>
+                                <button data-id="${item.id}" class="move-pantry-item mr-2 text-primary hover:text-primary-dark p-1 rounded-full hover:bg-primary-light/50">${ICONS.shoppingCart}</button>
+                                <button data-id="${item.id}" class="delete-pantry-item text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-100">${ICONS.trash}</button>
+                            `;
+                            collapsibleContent.insertBefore(newRow, collapsibleContent.firstChild);
+                            // Update count in header
+                            const countSpan = btn.querySelector('h2');
+                            if (countSpan) {
+                                const count = collapsibleContent.querySelectorAll('.pantry-item-row').length;
+                                countSpan.textContent = `${tag} (${count})`;
+                            }
+                            found = true;
+                            break;
+                        }
+                    }
+                }
                 textEl.value = '';
-                renderCurrentPage();
+                saveState();
             }
         }
         if (e.target.id === 'add-tag-form') {
@@ -511,7 +817,16 @@ export function attachEventListeners() {
             if (newTag && !isDuplicate) {
                 state.pantryTags.push(newTag);
                 textEl.value = '';
-                renderCurrentPage();
+                // Add the new tag to the select element in the form
+                const selectEl = document.getElementById('new-pantry-item-tag');
+                if (selectEl) {
+                    const option = document.createElement('option');
+                    option.value = newTag;
+                    option.textContent = newTag;
+                    option.selected = true;
+                    selectEl.appendChild(option);
+                }
+                saveState();
             } else if (isDuplicate) {
                 alert(`The category "${newTag}" already exists.`);
             }
@@ -538,14 +853,19 @@ export function attachEventListeners() {
         }
     });
 
-} // --- End of attachEventListeners ---
+}
 
 
 // --- SCANNER FUNCTIONS ---
 function onScanSuccess(decodedText, decodedResult) {
     console.log(`Scan result: ${decodedText}`, decodedResult);
     stopScanner();
-    renderNameCardModal(decodedText, decodedResult.result.format.formatName);
+
+    // Call the specific callback we set for this scan
+    if (currentScanCallback) {
+        currentScanCallback(decodedText, decodedResult);
+        currentScanCallback = null; // Clear it after use
+    }
 }
 
 function onScanFailure(error) {
@@ -558,13 +878,18 @@ function stopScanner() {
     const scannerContainer = document.getElementById('scanner-container');
     if (html5QrCodeScanner && html5QrCodeScanner.getState() === 2) { // 2 = SCANNING
         html5QrCodeScanner.stop()
-            .then(() => console.log("Scanner stopped."))
+            .then(() => {
+                console.log("Scanner stopped.");
+                html5QrCodeScanner = null;
+                currentScanCallback = null; // clear any pending callback on manual stop
+            })
             .catch(err => console.warn("Error stopping scanner:", err));
     }
     scannerContainer.classList.remove('is-visible');
 }
 
-async function startScanner() {
+async function startScanner(onScanCompleteCallback) {
+    currentScanCallback = onScanCompleteCallback;
     const scannerContainer = document.getElementById('scanner-container');
     const scannerStatus = document.getElementById('scanner-status');
 

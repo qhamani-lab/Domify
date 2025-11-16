@@ -1,35 +1,127 @@
 /* =========================================
-=== FOUNDATIONAL CSS RESET (Point 3 & 4)
-=========================================
-*/
+=== DOMIFY — PREMIUM UI THEME (2025)
+=== Light + Dark Mode | Glassmorphism | Texture | Animations
+========================================= */
+
+/* =========================================
+=== 1. CSS RESET & MOBILE FOUNDATION
+========================================= */
 *,
 *::before,
 *::after {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 html,
 body {
     width: 100%;
     overflow-x: hidden;
-    margin: 0;
-    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* =========================================
-=== BASE STYLES & VARIABLES
-=========================================
-*/
-
+=== 2. PREMIUM THEME VARIABLES
+========================================= */
 :root {
+    /* Brand */
     --primary: #7946FF;
     --primary-dark: #6238cc;
-    --primary-light: #F5F3FF;
-    --text-dark: #201A33;
-    /* iOS standard ease */
+    --primary-light: #A78BFA;
     --ios-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Light Mode */
+    --bg-primary: #f8f9fa;
+    --bg-gradient-start: #ffffff;
+    --bg-gradient-end: #f1f3f5;
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --card-border: rgba(0, 0, 0, 0.1);
+    --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --text-primary: #201A33;
+    --text-secondary: #6B7280;
+    --text-tertiary: #9CA3AF;
 }
 
+.dark {
+    /* Dark Mode */
+    --bg-primary: #1a1a2e;
+    --bg-gradient-start: #16213e;
+    --bg-gradient-end: #1a1a2e;
+    --card-bg: rgba(35, 35, 60, 0.92);
+    --card-border: rgba(120, 70, 255, 0.35);
+    --card-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(120, 70, 255, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --text-primary: #F5F5F5;
+    --text-secondary: #D1D5DB;
+    --text-tertiary: #9CA3AF;
+}
+
+/* =========================================
+=== 3. PREMIUM BODY BACKGROUND (TEXTURED)
+========================================= */
+/* =========================================
+=== 3. PREMIUM BODY BACKGROUND (ANIMATED NOISE)
+========================================= */
+body {
+    background: var(--bg-primary);
+    background-image:
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="5"><animate attributeName="baseFrequency" values="0.8;0.83;0.8" dur="20s" repeatCount="indefinite"/></feTurbulence><feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.25 0"/></filter><rect width="200" height="200" filter="url(%23n)" opacity="1"/></svg>'),
+        linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+    background-size: 200px 200px, cover;
+    background-position: 0 0, center;
+    background-blend-mode: overlay;
+    animation: noiseMove 20s linear infinite;
+    color: var(--text-primary);
+    min-height: 100vh;
+    background-attachment: fixed;
+}
+
+@keyframes noiseMove {
+    0% {
+        background-position: 0 0, center;
+    }
+
+    100% {
+        background-position: 200px 200px, center;
+    }
+}
+
+/* =========================================
+=== 4. PREMIUM CARD STYLES (GLASS + DEPTH)
+========================================= */
+#sidebar,
+#modal-content,
+.dashboard-tile,
+.bg-white {
+    background: var(--card-bg) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    border-radius: 1rem;
+    transition: all 0.25s var(--ios-ease);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-tile:hover,
+.dashboard-tile:active {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow:
+        0 16px 40px rgba(120, 70, 255, 0.3),
+        0 0 0 1px rgba(120, 70, 255, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-color: rgba(120, 70, 255, 0.6) !important;
+}
+
+/* =========================================
+=== 5. FONT & COLOR UTILITIES
+========================================= */
 .bg-primary {
     background-color: var(--primary);
 }
@@ -39,11 +131,26 @@ body {
 }
 
 .bg-primary-light {
-    background-color: var(--primary-light);
+    background-color: var(--bg-gradient-end);
 }
 
 .text-primary {
     color: var(--primary);
+}
+
+.text-dark,
+.text-gray-900,
+.text-gray-700 {
+    color: var(--text-primary);
+}
+
+.text-gray-600,
+.text-gray-500 {
+    color: var(--text-secondary);
+}
+
+.text-gray-400 {
+    color: var(--text-tertiary);
 }
 
 .border-primary {
@@ -62,87 +169,33 @@ body {
     --tw-border-color: var(--primary);
 }
 
-.text-dark {
-    color: var(--text-dark);
+/* Form Inputs */
+.dark input,
+.dark select,
+.dark textarea {
+    background-color: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--card-border);
+    color: var(--text-primary);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
+.dark input::placeholder,
+.dark textarea::placeholder {
+    color: var(--text-secondary);
 }
 
-::-webkit-scrollbar-track {
-    background: #f1f1f1;
+/* Active Nav Link */
+.dark .nav-link.font-bold {
+    color: var(--primary-light) !important;
+    font-weight: 600;
 }
-
-::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #aaa;
-}
-
-/* Donut chart */
-.donut-chart {
-    position: relative;
-    width: 200px;
-    height: 100px;
-    overflow: hidden;
-}
-
-.donut-chart-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: conic-gradient(from 270deg,
-            var(--primary) 0%,
-            var(--primary) var(--solar-percent, 0%),
-            #F0C4FF 0%,
-            #F0C4FF var(--grid-start, 0%),
-            var(--text-dark) 0%,
-            var(--text-dark) 100%);
-    transform: rotate(-90deg);
-}
-
-.donut-chart-hole {
-    position: absolute;
-    top: 25px;
-    left: 25px;
-    width: 150px;
-    height: 150px;
-    background: white;
-    border-radius: 50%;
-}
-
-.donut-chart-center {
-    position: absolute;
-    top: 20px;
-    left: 0;
-    width: 100%;
-    height: 100px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-/* Fix for iOS modal scrolling */
-#modal-content {
-    -webkit-overflow-scrolling: touch;
-}
-
 
 /* =========================================
-=== UI TRANSITIONS & ANIMATION CLASSES 
-=========================================
-*/
+=== 6. TRANSITIONS & ANIMATIONS
+========================================= */
 
-/* 1. Modal Pop-in (Fixes the snap) */
+/* Modal */
 #modal {
     opacity: 0;
     pointer-events: none;
@@ -165,13 +218,12 @@ body {
     transform: scale(1);
 }
 
-
-/* 2. Pantry Collapse (Smooth Height) */
+/* Collapsible */
 .collapsible-content {
     display: grid;
     grid-template-rows: 0fr;
     opacity: 0;
-    transition: grid-template-rows 0.35s var(--ios-ease), opacity 0.25s ease-in-out;
+    transition: grid-template-rows 0.35s var(--ios-ease), opacity 0.25s ease;
 }
 
 .collapsible-content-inner {
@@ -183,7 +235,7 @@ body {
     opacity: 1;
 }
 
-/* 3. Sidebar Links and List Hovers */
+/* Hovers */
 .nav-link,
 .pantry-item-row,
 .todo-item-row,
@@ -194,16 +246,16 @@ body {
     transition: background-color 0.25s ease-out;
 }
 
-.dashboard-tile {
-    transition: transform 0.25s var(--ios-ease), box-shadow 0.25s var(--ios-ease);
+.dark .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 0.75rem;
 }
 
-/* 4. Sidebar Slide (Mobile) */
+/* Sidebar */
 #sidebar {
     transition: transform 0.4s var(--ios-ease);
 }
 
-/* 5. Sidebar Overlay (Mobile) */
 #sidebar-overlay {
     transition: opacity 0.4s var(--ios-ease);
     opacity: 0;
@@ -213,7 +265,7 @@ body {
     opacity: 1;
 }
 
-/* 6. Task Strikethrough */
+/* Task Strikethrough */
 .task-text {
     position: relative;
     transition: color 0.4s ease;
@@ -226,19 +278,19 @@ body {
     top: 50%;
     height: 2px;
     width: 100%;
-    background: var(--text-dark);
+    background: var(--text-primary);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.3s var(--ios-ease);
 }
 
 .is-checked .task-text {
-    color: #9ca3af;
+    color: var(--text-secondary);
 }
 
 .is-checked .task-text::after {
     transform: scaleX(1);
-    background: #9ca3af;
+    background: var(--text-secondary);
 }
 
 .task-checkbox {
@@ -250,19 +302,23 @@ body {
     transform: scale(1.1);
 }
 
-/* 7. Sidebar Highlighter */
+/* Sidebar Highlighter */
 #sidebar-highlighter {
     position: absolute;
     left: 1rem;
     right: 1rem;
     height: 44px;
-    background-color: var(--primary-light);
+    background-color: var(--bg-gradient-end);
     border-radius: 0.5rem;
     z-index: 0;
-    transition: transform 0.35s var(--ios-ease), height 0.35s var(--ios-ease);
+    transition: transform 0.35s var(--ios-ease), height 0.35s var(--ios-ease), background-color 0.3s ease;
 }
 
-/* 8. Page Transitions */
+.dark #sidebar-highlighter {
+    background-color: rgba(120, 70, 255, 0.15);
+}
+
+/* Page Fade */
 .page-wrapper {
     opacity: 0;
     transform: translateY(10px);
@@ -274,7 +330,7 @@ body {
     transform: translateY(0);
 }
 
-/* 9. Scanner Transition */
+/* Scanner */
 #scanner-container {
     opacity: 0;
     pointer-events: none;
@@ -286,26 +342,15 @@ body {
     pointer-events: auto;
 }
 
-
 /* =========================================
-=== MOBILE/RESPONSIVE STYLES 
-=========================================
-*/
-
-/* Reset font size on mobile forms to prevent auto-zoom on iOS */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="search"],
-input[type="tel"],
-input[type="url"],
+=== 7. MOBILE & RESPONSIVE
+========================================= */
+input,
 textarea,
 select {
     font-size: 16px !important;
 }
 
-/* Ensure list items are touch-friendly targets */
 .grocery-item-row,
 .todo-item-row,
 .pantry-item-row {
@@ -317,39 +362,51 @@ select {
     flex-wrap: nowrap;
 }
 
-/* Touch-friendly buttons and interactive elements */
+.task-checkbox,
+input[type="checkbox"] {
+    min-width: 24px;
+    min-height: 24px;
+    flex-shrink: 0;
+}
+
 .delete-btn,
-.icon-btn,
-.task-checkbox {
+.icon-btn {
     min-width: 44px;
     min-height: 44px;
     flex-shrink: 0;
 }
 
-/* Tablet and below adjustments */
-@media (max-width: 768px) {
+#modal-content {
+    max-width: calc(100vw - 2rem);
+    margin: 1rem;
+}
 
-    /* Adjust sidebar width for tablets and mobile */
+#scanner-container {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#scanner-viewfinder {
+    max-width: min(90vw, 500px);
+    max-height: min(90vw, 500px);
+}
+
+/* iOS Safe Areas */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+    }
+
     #sidebar {
-        width: 85vw;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+}
+
+@media (max-width: 768px) {
+    #sidebar {
+        width: 85vw !important;
         max-width: 320px;
-    }
-
-    /* Adjust sizing for the SolarBot donut chart */
-    .donut-chart {
-        width: 160px;
-        height: 80px;
-    }
-
-    .donut-chart-bg {
-        width: 160px;
-        height: 160px;
-    }
-
-    .donut-chart-hole {
-        top: 20px;
-        left: 20px;
-        width: 120px;
-        height: 120px;
     }
 }

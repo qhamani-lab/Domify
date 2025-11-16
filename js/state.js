@@ -12,12 +12,82 @@ const initialState = {
         { id: 2, name: 'Dad', color: 'bg-lime-300', textColor: 'text-lime-800' },
         { id: 3, name: 'Nathina', color: 'bg-pink-300', textColor: 'text-pink-800' },
     ],
+    // Rolling banners for Explore page (partner promotions). These reference category ids above.
+    marketplaceBanners: [
+        {
+            id: 'banner-wetility-1',
+            categoryId: 'wetility',
+            title: 'Save with Smart Thermostats',
+            subtitle: 'Save up to 15% on energy — limited time R999 offer',
+            link: 'https://wetility.example.com/thermostat',
+            // simple theme hint for rendering (fallback)
+            bg: 'linear-gradient(135deg,#06b6d4 0%,#06b6d4a0 100%)',
+            // poster images (desktop and mobile) — used responsively
+            imageDesktop: 'https://media.umbraco.io/mangrove/w1qco2zn/ai-website-banners-desktop-v3.png',
+            imageMobile: 'https://media.umbraco.io/mangrove/054neppq/mobile-banner_option-1.png'
+        },
+        {
+            id: 'banner-balwin-1',
+            categoryId: 'balwin',
+            title: 'Get 20% Off First Visit',
+            subtitle: 'Trusted home repairs — save on your first booking',
+            link: 'https://balwin.example.com/first-visit',
+            bg: 'linear-gradient(135deg,#f59e0b 0%,#f9731677 100%)'
+        },
+        {
+            id: 'banner-plentify-1',
+            categoryId: 'plentify',
+            title: 'Starter Produce Box — R120',
+            subtitle: 'Seasonal homegrown produce from neighbours',
+            link: 'https://plentify.example.com/starter',
+            bg: 'linear-gradient(135deg,#10b981 0%,#34d39966 100%)'
+        }
+    ],
+    // Featured, offer-specific tiles (shown on Explore above categories).
+    // We'll render these as square-image-on-top tiles. Image URLs can be filled later.
+    marketplaceFeaturedOffers: [
+        {
+            id: 'feat-wetility-bf',
+            partnerId: 'wetility',
+            title: 'Wetility — Rethink Black Friday',
+            subtitle: 'Special Black Friday energy deals',
+            link: 'https://www.wetility.energy',
+            imageDesktop: 'https://www.instagram.com/p/DBlEw42gQW_/',
+            imageMobile: 'https://www.instagram.com/p/DBlEw42gQW_/'
+        },
+        {
+            id: 'feat-balwin-xmas',
+            partnerId: 'balwin',
+            title: 'Balwin — Christmas Offers',
+            subtitle: 'Home services discounted for the holidays',
+            link: 'https://balwin.example.com',
+            imageDesktop: 'https://news.balwin.co.za/hubfs/Imported_Blog_Media/xmas_article-600x360-1.jpg',
+            imageMobile: 'https://news.balwin.co.za/hubfs/Imported_Blog_Media/xmas_article-600x360-1.jpg'
+        },
+        {
+            id: 'feat-plentify-hotbot',
+            partnerId: 'plentify',
+            title: 'Plentify — HotBot Produce',
+            subtitle: 'Fresh starter boxes from neighbours',
+            link: 'https://plentify.example.com',
+            imageDesktop: 'https://cisp.cachefly.net/assets/articles/images/resized/0001115630_resized_plentifyhotbotgeysermanagement0220241022.jpg',
+            imageMobile: 'https://cisp.cachefly.net/assets/articles/images/resized/0001115630_resized_plentifyhotbotgeysermanagement0220241022.jpg'
+        },
+        {
+            id: 'feat-brightlight-solar',
+            partnerId: 'brightlight',
+            title: 'Bright Light Solar',
+            subtitle: 'Bright deals on solar installations',
+            link: 'https://www.brightlight-solutions.co.za/wp-content/uploads/2022/11/Bright-light-solar-installation.jpg',
+            imageDesktop: 'https://www.brightlight-solutions.co.za/wp-content/uploads/2022/11/Bright-light-solar-installation.jpg',
+            imageMobile: 'https://www.brightlight-solutions.co.za/wp-content/uploads/2022/11/Bright-light-solar-installation.jpg'
+        }
+    ],
     todos: [],
     groceryList: [],
     pantry: [],
-    lastUsedPantryTag: 'Uncategorized', // Remembers last tag for adding
+    lastUsedPantryTag: 'Uncategorized',
 
-    // --- UPDATED PANTRY TAGS ---
     pantryTags: [
         'Uncategorized',
         'Fruit',
@@ -37,7 +107,6 @@ const initialState = {
     collapsedTags: [],
     editingPantryItemId: null,
 
-    // --- UPDATED MEAL PLAN ---
     mealPlan: {
         selectedDay: 'monday',
         monday: { B: '', L: '', D: '', S: '' },
@@ -48,13 +117,42 @@ const initialState = {
         saturday: { B: '', L: '', D: '', S: '' },
         sunday: { B: '', L: '', D: '', S: '' },
     },
-    // --- END UPDATE ---
 
     rewardsCards: [],
+    // Default marketplace categories / offers shown on the Explore page.
+    // Each category has: id (string), icon (key from ICONS), title, description, and offers[]
     marketplaceCategories: [
-        { id: 'insurance', title: 'Home Insurance', icon: 'shield', description: 'Protect your home and belongings with trusted insurance partners.', offers: [{ name: 'Outsurance', deal: 'Get a R500 voucher on signup.', link: '#' }, { name: 'Santam', deal: '10% off your first year premium.', link: '#' }] },
-        { id: 'internet', title: 'WiFi & Fibre', icon: 'wifi', description: 'Get connected with fast and reliable internet packages.', offers: [{ name: 'MTN Fibre', deal: 'First month free on 24-month contracts.', link: '#' }, { name: 'Telkom', deal: 'Free installation worth R1500.', link: '#' }] },
-        { id: 'security', title: 'Home Security', icon: 'bell', description: 'Keep your family safe with state-of-the-art alarm systems.', offers: [{ name: 'ADT Security', deal: 'Free outdoor camera with every new installation.', link: '#' }, { name: 'Chubb', deal: '3 months free armed response.', link: '#' }] },
+        {
+            id: 'plentify',
+            icon: 'store',
+            title: 'Plentify',
+            description: 'Local marketplace connecting neighbours with surplus produce and homegrown goods.',
+            offers: [
+                { name: 'Starter Box', deal: '3kg seasonal produce box for R120', link: 'https://plentify.example.com/starter' },
+                { name: 'Referral Credit', deal: 'Get R30 credit for each friend you invite', link: 'https://plentify.example.com/referrals' },
+                { name: 'Weekly Bundle', deal: 'Subscribe and save 10% on weekly deliveries', link: 'https://plentify.example.com/weekly' }
+            ]
+        },
+        {
+            id: 'balwin',
+            icon: 'savings',
+            title: 'Balwin Home',
+            description: 'Home services and maintenance offers for efficient, affordable repairs.',
+            offers: [
+                { name: 'First Visit Discount', deal: '20% off your first booking (up to R200)', link: 'https://balwin.example.com/first-visit' },
+                { name: 'Bundle Service', deal: 'Book 3 services get the 4th free', link: 'https://balwin.example.com/bundle' }
+            ]
+        },
+        {
+            id: 'wetility',
+            icon: 'energy',
+            title: 'Wetility',
+            description: 'Utilities & energy saving deals to lower your bills and carbon footprint.',
+            offers: [
+                { name: 'Smart Thermostat', deal: 'Save up to 15% on energy with smart thermostats (R999)', link: 'https://wetility.example.com/thermostat' },
+                { name: 'Solar Consultation', deal: 'Free home assessment for solar-ready households', link: 'https://wetility.example.com/solar' }
+            ]
+        }
     ],
     geyser: {
         temperature: 48, status: 'Active',
@@ -70,7 +168,12 @@ const initialState = {
         fromGrid: 0.02,
         insights: { /* ... (all your solar insight data) ... */ }
     },
-    settings: { loadshedding: { area: null, notifications: false } }
+    settings: {
+        loadshedding: { area: null, notifications: false },
+        theme: null, // Set to null to allow auto-detection
+        notifications: false,
+        wifi: { ssid: null, password: null, type: 'manual' }
+    }
 };
 
 // --- STATE FUNCTIONS ---
@@ -83,7 +186,7 @@ export function loadState() {
     const savedState = localStorage.getItem('homeHubAppState');
     const savedParsed = savedState ? JSON.parse(savedState) : {};
 
-    // --- SPECIAL MERGE FOR MEALPLAN (Adds 'S' to old plans) ---
+    // --- SPECIAL MERGE FOR MEALPLAN ---
     if (savedParsed.mealPlan) {
         for (const day in initialState.mealPlan) {
             if (savedParsed.mealPlan[day]) {
@@ -91,9 +194,19 @@ export function loadState() {
             }
         }
     }
-    // --- END MERGE ---
 
     state = { ...initialState, ...savedParsed };
+
+    // --- NEW: AUTO-DETECT THEME ON FIRST LOAD ---
+    // If state.settings.theme is null (first load), detect system preference.
+    if (state.settings.theme === null) {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            state.settings.theme = 'dark';
+        } else {
+            state.settings.theme = 'light';
+        }
+    }
+    // --- END NEW ---
 
     // --- MIGRATION & SAFETY LOGIC ---
     const defaultTags = initialState.pantryTags;
@@ -105,6 +218,11 @@ export function loadState() {
     state.editingPantryItemId = null;
     state.lastUsedPantryTag = state.lastUsedPantryTag || 'Uncategorized';
 
+    state.settings.notifications = state.settings.notifications || initialState.settings.notifications;
+    state.settings.wifi = state.settings.wifi || initialState.settings.wifi;
+    state.settings.loadshedding = state.settings.loadshedding || initialState.settings.loadshedding;
+
+
     if (state.pantry && state.pantry.forEach) {
         state.pantry.forEach(item => {
             if (!item.tag) {
@@ -114,7 +232,7 @@ export function loadState() {
     }
     // --- END MIGRATION LOGIC ---
 
-    const validPages = ['home', 'grocery', 'pantry', 'rewards', 'buy', 'meals', 'settings', 'todo'];
+    const validPages = ['home', 'grocery', 'pantry', 'rewards', 'explore', 'meals', 'settings', 'todo'];
     if (!validPages.includes(state.currentPage)) {
         state.currentPage = 'home';
     }
