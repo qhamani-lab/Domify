@@ -52,8 +52,8 @@ const initialState = {
             title: 'Wetility — Rethink Black Friday',
             subtitle: 'Special Black Friday energy deals',
             link: 'https://www.wetility.energy',
-            imageDesktop: 'https://www.instagram.com/p/DBlEw42gQW_/',
-            imageMobile: 'https://www.instagram.com/p/DBlEw42gQW_/'
+            imageDesktop: './assets/images/wetility.png',
+            imageMobile: './assets/images/wetility.png'
         },
         {
             id: 'feat-balwin-xmas',
@@ -61,8 +61,8 @@ const initialState = {
             title: 'Balwin — Christmas Offers',
             subtitle: 'Home services discounted for the holidays',
             link: 'https://balwin.example.com',
-            imageDesktop: 'https://news.balwin.co.za/hubfs/Imported_Blog_Media/xmas_article-600x360-1.jpg',
-            imageMobile: 'https://news.balwin.co.za/hubfs/Imported_Blog_Media/xmas_article-600x360-1.jpg'
+            imageDesktop: './assets/images/balwin-xmas.jpg',
+            imageMobile: './assets/images/balwin-xmas.jpg'
         },
         {
             id: 'feat-plentify-hotbot',
@@ -70,8 +70,8 @@ const initialState = {
             title: 'Plentify — HotBot Produce',
             subtitle: 'Fresh starter boxes from neighbours',
             link: 'https://plentify.example.com',
-            imageDesktop: 'https://cisp.cachefly.net/assets/articles/images/resized/0001115630_resized_plentifyhotbotgeysermanagement0220241022.jpg',
-            imageMobile: 'https://cisp.cachefly.net/assets/articles/images/resized/0001115630_resized_plentifyhotbotgeysermanagement0220241022.jpg'
+            imageDesktop: './assets/images/plentify-hotbot.jpg',
+            imageMobile: './assets/images/plentify-hotbot.jpg'
         },
         {
             id: 'feat-brightlight-solar',
@@ -79,8 +79,8 @@ const initialState = {
             title: 'Bright Light Solar',
             subtitle: 'Bright deals on solar installations',
             link: 'https://www.brightlight-solutions.co.za/wp-content/uploads/2022/11/Bright-light-solar-installation.jpg',
-            imageDesktop: 'https://www.brightlight-solutions.co.za/wp-content/uploads/2022/11/Bright-light-solar-installation.jpg',
-            imageMobile: 'https://www.brightlight-solutions.co.za/wp-content/uploads/2022/11/Bright-light-solar-installation.jpg'
+            imageDesktop: './assets/images/brightlight-solar.jpg',
+            imageMobile: './assets/images/brightlight-solar.jpg'
         }
     ],
     todos: [],
