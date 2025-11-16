@@ -18,6 +18,7 @@ import {
     modalEl,
     modalContentEl
 } from './render.js';
+import { ICONS } from './icons.js'; // <-- THIS IS THE FIX
 
 // --- GLOBALS FOR SCANNER ---
 let currentScanCallback = null;
