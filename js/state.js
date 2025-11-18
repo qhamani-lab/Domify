@@ -51,19 +51,16 @@ const initialState = {
             partnerId: 'wetility',
             title: 'Wetility — Rethink Black Friday',
             subtitle: 'Special Black Friday energy deals',
-            link: 'https.://www.wetility.energy',
-            // --- THIS IS THE FIX ---
-            // I removed the stray backtick (`) and the extra dot (.)
+            link: 'https://www.wetility.energy',
             imageDesktop: './assets/images/wetility-black-friday-2.jpg',
             imageMobile: './assets/images/wetility-black-friday-2.jpg'
-            // --- END OF FIX ---
         },
         {
             id: 'feat-balwin-xmas',
             partnerId: 'balwin',
             title: 'Balwin — Christmas Offers',
             subtitle: 'Home services discounted for the holidays',
-            link: 'https.://balwin.example.com',
+            link: 'https://balwin.example.com',
             imageDesktop: './assets/images/balwin-xmas.jpg',
             imageMobile: './assets/images/balwin-xmas.jpg'
         },
@@ -72,7 +69,7 @@ const initialState = {
             partnerId: 'plentify',
             title: 'Plentify — HotBot Produce',
             subtitle: 'Fresh starter boxes from neighbours',
-            link: 'https: //plentify.example.com',
+            link: 'https://plentify.example.com',
             imageDesktop: './assets/images/plentify-hotbot.jpg',
             imageMobile: './assets/images/plentify-hotbot.jpg'
         },
@@ -81,7 +78,7 @@ const initialState = {
             partnerId: 'brightlight',
             title: 'Bright Light Solar',
             subtitle: 'Bright deals on solar installations',
-            link: 'https.://www.brightlight-solutions.co.za/wp-content/uploads/2022/11/Bright-light-solar-installation.jpg',
+            link: 'https://www.brightlight-solutions.co.za/wp-content/uploads/2022/11/Bright-light-solar-installation.jpg',
             imageDesktop: './assets/images/brightlight-solar.jpg',
             imageMobile: './assets/images/brightlight-solar.jpg'
         }
@@ -131,9 +128,9 @@ const initialState = {
             title: 'Plentify',
             description: 'Local marketplace connecting neighbours with surplus produce and homegrown goods.',
             offers: [
-                { name: 'Starter Box', deal: '3kg seasonal produce box for R120', link: 'https.://plentify.example.com/starter' },
-                { name: 'Referral Credit', deal: 'Get R30 credit for each friend you invite', link: 'https.://plentify.example.com/referrals' },
-                { name: 'Weekly Bundle', deal: 'Subscribe and save 10% on weekly deliveries', link: 'https.://plentify.example.com/weekly' }
+                { name: 'Starter Box', deal: '3kg seasonal produce box for R120', link: 'https://plentify.example.com/starter' },
+                { name: 'Referral Credit', deal: 'Get R30 credit for each friend you invite', link: 'https://plentify.example.com/referrals' },
+                { name: 'Weekly Bundle', deal: 'Subscribe and save 10% on weekly deliveries', link: 'https://plentify.example.com/weekly' }
             ]
         },
         {
@@ -142,8 +139,8 @@ const initialState = {
             title: 'Balwin Home',
             description: 'Home services and maintenance offers for efficient, affordable repairs.',
             offers: [
-                { name: 'First Visit Discount', deal: '20% off your first booking (up to R200)', link: 'https.://balwin.example.com/first-visit' },
-                { name: 'Bundle Service', deal: 'Book 3 services get the 4th free', link: 'https.://balwin.example.com/bundle' }
+                { name: 'First Visit Discount', deal: '20% off your first booking (up to R200)', link: 'https://balwin.example.com/first-visit' },
+                { name: 'Bundle Service', deal: 'Book 3 services get the 4th free', link: 'https://balwin.example.com/bundle' }
             ]
         },
         {
@@ -152,8 +149,8 @@ const initialState = {
             title: 'Wetility',
             description: 'Utilities & energy saving deals to lower your bills and carbon footprint.',
             offers: [
-                { name: 'Smart Thermostat', deal: 'Save up to 15% on energy with smart thermostats (R999)', link: 'https.://wetility.example.com/thermostat' },
-                { name: 'Solar Consultation', deal: 'Free home assessment for solar-ready households', link: 'https.://wetility.example.com/solar' }
+                { name: 'Smart Thermostat', deal: 'Save up to 15% on energy with smart thermostats (R999)', link: 'https://wetility.example.com/thermostat' },
+                { name: 'Solar Consultation', deal: 'Free home assessment for solar-ready households', link: 'https://wetility.example.com/solar' }
             ]
         }
     ],
